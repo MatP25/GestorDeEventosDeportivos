@@ -1,0 +1,1 @@
+namespace GestorEventosDeportivos.Modules.Usuarios.Application.Services;
