@@ -1,6 +1,8 @@
 using GestorEventosDeportivos.Components;
 using Microsoft.EntityFrameworkCore;
 using GestorEventosDeportivos.Shared.Infrastructure.Persistence;
+using GestorEventosDeportivos.Modules.Usuarios.Application.Services;
+using GestorEventosDeportivos.Modules.ProgresoCarreras.Application;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,14 +10,18 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+builder.Services.AddTransient<IUsuarioServices, UsuarioServices>();
+builder.Services.AddTransient<IProgresoService , ProgresoServices>();
+
 //DB Context
 var conn = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(conn, ServerVersion.AutoDetect(conn)));
 
-//
-
 var app = builder.Build();
+
+// Insertar datos de prueba
+InitData.InsertData(app);
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

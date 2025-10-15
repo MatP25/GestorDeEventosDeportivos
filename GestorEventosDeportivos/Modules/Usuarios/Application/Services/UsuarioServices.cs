@@ -14,7 +14,7 @@ public class UsuarioServices : IUsuarioServices
         _context = context;
     }
 
-    public async Task<Usuario> RegistrarUsuarioParticipante(string Nombre, string Apellido, string Email, string Password, DateTime fechaNac)
+    public async Task<Usuario> RegistrarUsuarioParticipante(string Nombre, string Apellido, string Email, string Password, DateOnly fechaNac)
     {
         if (string.IsNullOrWhiteSpace(Nombre) || string.IsNullOrWhiteSpace(Apellido) ||
             string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password))
