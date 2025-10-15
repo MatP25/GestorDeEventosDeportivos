@@ -3,6 +3,7 @@ using GestorEventosDeportivos.Modules.Usuarios.Domain.Entities;
 using GestorEventosDeportivos.Modules.ProgresoCarreras.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace GestorEventosDeportivos.Shared.Infrastructure.Persistence;
 
@@ -51,14 +52,17 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Participacion>()
             .Property(p => p.Progreso)
             .HasConversion(
-                v => string.Join(";", v.Select(kvp => $"{kvp.Key}:{kvp.Value}")),
+                v => string.Join(";", v.Select(kvp => $"{kvp.Key}|{kvp.Value}")),
                 v => v
                     .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
-                    .Select(part => part.Split(new[] { ':' }, StringSplitOptions.None))
+                    .Select(part => part.Split(new[] { '|' }, StringSplitOptions.None))
                     .ToDictionary(
                         arr => uint.Parse(arr[0], CultureInfo.InvariantCulture),
-                        arr => TimeSpan.Parse(arr[1], CultureInfo.InvariantCulture)
-                    )
+                        arr => TimeSpan.Parse(arr[1], CultureInfo.InvariantCulture)),
+                new ValueComparer<IDictionary<uint, TimeSpan>>(
+                    (c1, c2) => c1!.SequenceEqual(c2!),
+                    c => c.Aggregate(0, (a, kvp) => HashCode.Combine(a, kvp.Key.GetHashCode(), kvp.Value.GetHashCode())),
+                    c => c.ToDictionary(kvp => kvp.Key, kvp => kvp.Value))
             );
     }
 }

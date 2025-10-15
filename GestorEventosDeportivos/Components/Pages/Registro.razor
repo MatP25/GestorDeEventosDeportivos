@@ -1,0 +1,63 @@
+@page "/registro"
+@using GestorEventosDeportivos.Modules.Usuarios.Application.Services
+@using GestorEventosDeportivos.Modules.Usuarios.Domain.Entities
+@rendermode InteractiveServer
+@inject IUsuarioServices usuarioServices
+
+<PageTitle>Registro de Usuario</PageTitle>
+
+
+<form method="post" @onsubmit="Submit" @formname="registro-usuario">
+    <AntiforgeryToken />
+    <div>
+        <label>
+            Nombre: 
+            <InputText @bind-Value="Model!.Nombre" />
+        </label>
+        <label>
+            Apellido: 
+            <InputText @bind-Value="Model!.Apellido" />
+        </label>
+        <label>
+            Fecha de nacimiento: 
+            <InputDate @bind-Value="Model!.FechaNac" />
+        </label>
+        <label>
+            Email: 
+            <InputText type="email" @bind-Value="Model!.Email" />
+        </label>
+         <label>
+            Contraseña: 
+            <InputText type="password" @bind-Value="Model!.Password" />
+        </label>
+         <label>
+            Confirmación de contraseña: 
+            <InputText type="password" @bind-Value="confirmacionPassword" />
+        </label>
+    </div>
+    <div>
+        <button type="submit">Submit</button>
+    </div>
+</form>
+
+
+
+@code {
+
+    [SupplyParameterFromForm]
+    private Usuario? Model { get; set; } = new Usuario();
+    private string confirmacionPassword = "";
+
+    protected override void OnInitialized()
+    {
+        Model.FechaNac = DateOnly.FromDateTime(DateTime.Now);
+    }
+
+    private void Submit() {
+        try {
+            usuarioServices.RegistrarUsuarioParticipante(Model.Nombre, Model.Apellido, Model.Email, Model.Password, Model.FechaNac);
+        } catch (Exception ex) {
+            Console.WriteLine($"Error al insertar el usuario: {ex.Message}");
+        }
+    }
+}

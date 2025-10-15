@@ -1,5 +1,4 @@
 using GestorEventosDeportivos.Shared.Domain.Common;
-using GestorEventosDeportivos.Modules.Carreras.Domain.Entities;
 using GestorEventosDeportivos.Modules.ProgresoCarreras.Domain.Entities;
 
 namespace GestorEventosDeportivos.Modules.Usuarios.Domain.Entities;
@@ -9,7 +8,7 @@ public class Usuario : BaseEntity<Guid>, IAggregateRoot{
     public string Apellido { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
-    public DateTime FechaNac { get; set; }
+    public DateOnly FechaNac { get; set; }
 
     public PerfilUsuarioDTO DatosPerfil() => new(Id, Nombre, Apellido, Email, FechaNac);
 }
@@ -24,4 +23,4 @@ public class Participante : Usuario
 
 }
 
-public record PerfilUsuarioDTO(Guid Id, string Nombre, string Apellido, string Email, DateTime FechaNac);
+public record PerfilUsuarioDTO(Guid Id, string Nombre, string Apellido, string Email, DateOnly FechaNac);

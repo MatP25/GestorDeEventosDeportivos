@@ -31,18 +31,18 @@ public class ProgresoServices : IProgresoService
             .Include(c => c.Participaciones)
             .ThenInclude(p => p.Participante)
             .Include(c => c.PuntosDeControl)
-            .FirstOrDefaultAsync(c => c.EventoId == carreraId)
+            .FirstOrDefaultAsync(c => c.Id == carreraId)
             ?? throw new NotFoundException($"No se encontró la carrera con Id {carreraId}.");
 
         Dictionary<uint, ProgresoPuntoDeControlDTO> progresoPorPuntos = new();
 
         foreach (PuntoDeControl pc in carrera.PuntosDeControl)
         {
-            Dictionary<Guid, TimeSpan?> tiemposParticipantes = new();
+            Dictionary<string, TimeSpan?> tiemposParticipantes = new();
             foreach (Participacion part in carrera.Participaciones)
             {
                 tiemposParticipantes.Add(
-                    part.ParticipanteId,
+                    string.Concat("#", part.NumeroCorredor, " ", part.Participante!.Nombre, " ", part.Participante.Apellido),
                     part.Progreso.ContainsKey(pc.Posicion) ? part.Progreso[pc.Posicion] : null
                 );
             }

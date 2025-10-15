@@ -5,7 +5,7 @@ namespace GestorEventosDeportivos.Modules.Usuarios.Application.Services;
 
 public interface IUsuarioServices
 {
-    Task<Usuario> RegistrarUsuarioParticipante(string Nombre, string Apellido, string Email, string Password, DateTime fechaNac);
+    Task<Usuario> RegistrarUsuarioParticipante(string Nombre, string Apellido, string Email, string Password, DateOnly fechaNac);
     Task<PerfilUsuarioDTO> ObtenerDatosUsuarioPorEmail(string Email);
     Task<PerfilUsuarioDTO> ObtenerDatosUsuarioId(Guid usuarioId);
     Task<IEnumerable<Participacion>> ObtenerParticipacionesDeUsuario(Guid usuarioId);
