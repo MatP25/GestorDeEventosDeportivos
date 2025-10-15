@@ -16,7 +16,6 @@ public class Evento : BaseEntity<Guid>, IAggregateRoot
     public EstadoEvento EstadoEvento { get; set; } = EstadoEvento.SinComenzar;
 
     public List<Carrera> Carreras { get; set; } = new();
-
 }
 
 public class Carrera : BaseEntity<Guid>, IAggregateRoot
