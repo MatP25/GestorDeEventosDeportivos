@@ -4,6 +4,7 @@ using GestorEventosDeportivos.Shared.Infrastructure.Persistence;
 using GestorEventosDeportivos.Modules.Usuarios.Application.Services;
 using GestorEventosDeportivos.Modules.ProgresoCarreras.Application;
 using GestorEventosDeportivos.Modules.ProgresoCarreras.Api;
+using GestorEventosDeportivos.Modules.Carreras.Application.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,7 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddTransient<IUsuarioServices, UsuarioServices>();
 builder.Services.AddTransient<IProgresoService , ProgresoServices>();
+builder.Services.AddTransient<ICarreraService , CarreraService>();
 
 // Generador automaticos de lecturas (solo si esta habilitado)
 var generadorHabilitado = builder.Configuration.GetValue<bool>("GeneradorLecturas:Habilitado", true);
