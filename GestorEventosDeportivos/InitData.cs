@@ -19,12 +19,13 @@ public class InitData
                 throw new InvalidOperationException("No se pudo obtener el contexto de la base de datos.");
             }
 
-            EntityEntry<Evento> evento1, evento2, evento3;
-            EntityEntry<Carrera> carrera1, carrera2, carrera3;
+            EntityEntry<Evento> evento1, evento2, evento3, evento4;
+            EntityEntry<Carrera> carrera1, carrera2, carrera3, carrera4;
             EntityEntry<Participante> participante1, participante2, participante3;
             EntityEntry<Participacion> participacion1carrera1, participacion2carrera1, participacion3carrera1,
                 participacion1carrera2, participacion2carrera2, participacion3carrera2,
-                participacion1carrera3, participacion2carrera3, participacion3carrera3;
+                participacion1carrera3, participacion2carrera3, participacion3carrera3,
+                participacion1carrera4, participacion2carrera4, participacion3carrera4;
 
             Console.WriteLine("Verificando si es necesario insertar datos de prueba...");
 
@@ -75,6 +76,16 @@ public class InitData
                     CantidadParticipantes = 10
                 });
 
+                evento4 = context.Eventos.Add(new()
+                {
+                    Nombre = "Maratón en Curso",
+                    FechaInicio = DateTime.Now,
+                    Ubicacion = "Montevideo",
+                    RegistroHabilitado = false,
+                    EstadoEvento = EstadoEvento.EnCurso,
+                    CantidadParticipantes = 10
+                });
+
                 carrera1 = context.Carreras.Add(new()
                 {
                     EventoId = evento1.Entity.Id,
@@ -113,6 +124,17 @@ public class InitData
                     {
                         new PuntoDeControl { Posicion = 1, Ubicacion = "Punto 1 - Km 10" },
                         new PuntoDeControl { Posicion = 2, Ubicacion = "Punto 2 - Km 20" }
+                    }
+                });
+
+                carrera4 = context.Carreras.Add(new()
+                {
+                    EventoId = evento4.Entity.Id,
+                    Longitud = 10000,
+                    PuntosDeControl = new List<PuntoDeControl>
+                    {
+                        new PuntoDeControl { Posicion = 1, Ubicacion = "Punto 1 - Km 5" },
+                        new PuntoDeControl { Posicion = 2, Ubicacion = "Punto 2 - Km 10" }
                     }
                 });
 
@@ -264,25 +286,68 @@ public class InitData
                         }
                     });
 
+                // Participaciones para carrera4 (en curso)
+                participacion1carrera4 = context.Participaciones.Add(
+                    new Participacion
+                    {
+                        EventoId = carrera4.Entity.EventoId,
+                        ParticipanteId = participante1.Entity.Id,
+                        NumeroCorredor = 101,
+                        Puesto = 0,
+                        Estado = EstadoParticipanteEnCarrera.EnCurso,
+                        Progreso = new Dictionary<uint, TimeSpan>
+                        {
+                            { 1, new TimeSpan(0, 20, 30) }
+                        }
+                    });
+
+                participacion2carrera4 = context.Participaciones.Add(
+                    new Participacion
+                    {
+                        EventoId = carrera4.Entity.EventoId,
+                        ParticipanteId = participante2.Entity.Id,
+                        NumeroCorredor = 102,
+                        Puesto = 0,
+                        Estado = EstadoParticipanteEnCarrera.EnCurso,
+                        Progreso = new Dictionary<uint, TimeSpan>
+                        {
+                            { 1, new TimeSpan(0, 22, 15) }
+                        }
+                    });
+
+                participacion3carrera4 = context.Participaciones.Add(
+                    new Participacion
+                    {
+                        EventoId = carrera4.Entity.EventoId,
+                        ParticipanteId = participante3.Entity.Id,
+                        NumeroCorredor = 103,
+                        Puesto = 0,
+                        Estado = EstadoParticipanteEnCarrera.EnCurso,
+                        Progreso = new Dictionary<uint, TimeSpan> { }
+                    });
+
                 participante1.Entity.Carreras.AddRange(new[]
                 {
                     participacion1carrera1.Entity,
                     participacion1carrera2.Entity,
-                    participacion1carrera3.Entity
+                    participacion1carrera3.Entity,
+                    participacion1carrera4.Entity
                 });
 
                 participante2.Entity.Carreras.AddRange(new[]
                 {
                     participacion2carrera1.Entity,
                     participacion2carrera2.Entity,
-                    participacion2carrera3.Entity
+                    participacion2carrera3.Entity,
+                    participacion2carrera4.Entity
                 });
 
                 participante3.Entity.Carreras.AddRange(new[]
                 {
                     participacion3carrera1.Entity,
                     participacion3carrera2.Entity,
-                    participacion3carrera3.Entity
+                    participacion3carrera3.Entity,
+                    participacion3carrera4.Entity
                 });
 
                 carrera1.Entity.Participaciones.AddRange(new[]
@@ -302,6 +367,12 @@ public class InitData
                     participacion1carrera3.Entity,
                     participacion2carrera3.Entity,
                     participacion3carrera3.Entity
+                });
+                carrera4.Entity.Participaciones.AddRange(new[]
+                {
+                    participacion1carrera4.Entity,
+                    participacion2carrera4.Entity,
+                    participacion3carrera4.Entity
                 });
             }
 
