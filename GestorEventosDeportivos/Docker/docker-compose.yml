@@ -16,6 +16,12 @@ services:
       - ./mysql-init:/docker-entrypoint-initdb.d
     restart: unless-stopped
     command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - gestor_net
 
 volumes:
   mysql_data:
+
+networks:
+  gestor_net:
+    name: gestor_net
