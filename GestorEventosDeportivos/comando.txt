@@ -4,7 +4,7 @@
 
 2. dotnet publish -c Release -o ./publish
 
-3. docker -t api-lectura-sensor .
+3. docker build -t lectura-sensor .
 
 4. Fijamos que se haya creado la imagen -> docker images | grep lectura-sensor
 
