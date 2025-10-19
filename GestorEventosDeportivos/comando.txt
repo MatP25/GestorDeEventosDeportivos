@@ -1,0 +1,26 @@
+                    Generar imagen lectura-sensor 
+
+1. dotnet build
+
+2. dotnet publish -c Release -o ./publish
+
+3. docker -t api-lectura-sensor .
+
+4. Fijamos que se haya creado la imagen -> docker images | grep lectura-sensor
+
+5. docker compose -f docker-compose_loadB.yml up -d
+
+recrear imagen y contenedores
+
+docker compose -f docker-compose_loadB.yml up -d --force-recreate
+
+Ver logs
+
+docker logs -f gestoreventosdeportivos-app3-1
+docker logs -f gestoreventosdeportivos-app1-1
+docker logs -f gestoreventosdeportivos-app2-1
+docker logs -f gestoreventosdeportivos-nginx-1
+
+Probar
+
+for i in {1..20}; do curl -s http://localhost:8080/api/progreso/generar-lectura > /dev/null; done
