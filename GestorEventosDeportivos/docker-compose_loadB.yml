@@ -1,0 +1,44 @@
+services:
+  app1:
+    image: lectura-sensor
+    ports:
+      - "4000:5195"
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=mysql;Port=3306;Database=GestorEventosDeportivos;User=appuser;Password=apppassword;SslMode=None;AllowPublicKeyRetrieval=True
+    networks:
+      - gestor_net
+
+  app2:
+    image: lectura-sensor
+    ports:
+      - "4001:5195"
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=mysql;Port=3306;Database=GestorEventosDeportivos;User=appuser;Password=apppassword;SslMode=None;AllowPublicKeyRetrieval=True
+    networks:
+      - gestor_net
+
+  app3:
+    image: lectura-sensor
+    ports:
+      - "4002:5195"
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=mysql;Port=3306;Database=GestorEventosDeportivos;User=appuser;Password=apppassword;SslMode=None;AllowPublicKeyRetrieval=True
+    networks:
+      - gestor_net
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - app1
+      - app2
+      - app3
+    networks:
+      - gestor_net
+
+networks:
+  gestor_net:
+    external: true

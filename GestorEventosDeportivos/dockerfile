@@ -1,0 +1,22 @@
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+
+COPY . .
+
+# Restaurar y publicar
+RUN dotnet restore ./GestorEventosDeportivos.csproj \
+ && dotnet publish ./GestorEventosDeportivos.csproj -c Release -o /app/publish --no-restore
+
+# Etapa final (runtime)
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
+WORKDIR /app
+
+COPY --from=build /app/publish .
+
+# Configuracion del hosting
+ENV ASPNETCORE_URLS=http://+:5195
+ENV ASPNETCORE_ENVIRONMENT=Development
+
+EXPOSE 5195
+
+ENTRYPOINT ["dotnet", "GestorEventosDeportivos.dll"]
