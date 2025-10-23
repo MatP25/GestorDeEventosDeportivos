@@ -1,0 +1,205 @@
+@page "/carreras"
+@using GestorEventosDeportivos.Modules.Carreras.Domain.Entities
+@using GestorEventosDeportivos.Modules.Carreras.Domain.Enums
+@using GestorEventosDeportivos.Modules.Carreras.Application.Services
+
+@rendermode InteractiveServer
+
+@inject ICarreraService CarreraService
+@inject NavigationManager Nav
+
+<PageTitle>Carreras</PageTitle>
+
+<h1>Carreras</h1>
+
+<EditForm Model="this" OnValidSubmit="Buscar">
+	<div class="row g-3 align-items-end mb-3">
+		<div class="col-12 col-md-auto">
+			<label class="form-label d-block">Ordenar por fecha</label>
+			<select class="form-select" value="@(OrdenAsc ? "true" : "false")" @onchange="OnOrdenChange">
+				<option value="true">Ascendente (mas antiguas primero)</option>
+				<option value="false">Descendente (mas recientes primero)</option>
+			</select>
+		</div>
+		<div class="col-12 col-md-auto">
+			<label class="form-label d-block">Estado(s)</label>
+			<div class="form-check form-check-inline">
+				<InputCheckbox @bind-Value="EstadoSinComenzar" class="form-check-input" id="st1" />
+				<label class="form-check-label" for="st1">Sin comenzar</label>
+			</div>
+			<div class="form-check form-check-inline">
+				<InputCheckbox @bind-Value="EstadoEnCurso" class="form-check-input" id="st2" />
+				<label class="form-check-label" for="st2">En curso</label>
+			</div>
+			<div class="form-check form-check-inline">
+				<InputCheckbox @bind-Value="EstadoFinalizado" class="form-check-input" id="st3" />
+				<label class="form-check-label" for="st3">Finalizado</label>
+			</div>
+		</div>
+		<div class="col-12 col-md-auto">
+			<button type="submit" class="btn btn-primary">Buscar</button>
+			<button type="button" class="btn btn-outline-secondary ms-2" @onclick="Limpiar">Limpiar</button>
+		</div>
+	</div>
+</EditForm>
+
+@if (cargando)
+{
+	<p>Cargando carreras…</p>
+}
+else if (error != null)
+{
+	<div class="alert alert-danger">@error</div>
+}
+else
+{
+	<div>
+		@if (Filtradas.Count == 0)
+		{
+			<p class="text-muted">No hay carreras que coincidan con los filtros.</p>
+		}
+		else
+		{
+			<ul class="list-group">
+				@foreach (var c in Filtradas)
+				{
+					<li class="list-group-item d-flex justify-content-between align-items-center">
+						<div class="ms-2 me-auto">
+							<div class="fw-bold">@c.Evento!.Nombre (@c.Longitud m)</div>
+							<small>
+								@c.Evento.Ubicacion · @c.Evento.FechaInicio.ToString("dd/MM/yyyy HH:mm")
+								@if (c.Evento!.EstadoEvento == EstadoEvento.Finalizado && !string.IsNullOrWhiteSpace(c.Ganador))
+								{
+									<span> · Ganador: <b>@c.Ganador</b> (@(c.TiempoGanador?.ToString() ?? "--"))</span>
+								}
+							</small>
+						</div>
+						<div class="d-flex gap-2 align-items-center">
+							<span class="badge @GetBadgeClass(c.Evento!.EstadoEvento)">@c.Evento!.EstadoEvento</span>
+							@if (c.Evento!.EstadoEvento == EstadoEvento.Finalizado)
+							{
+								<button class="btn btn-sm btn-outline-primary" @onclick="() => IrAResultados(c.Id)">Ver resultados</button>
+							}
+						</div>
+					</li>
+				}
+			</ul>
+		}
+		<div class="d-flex justify-content-between align-items-center mt-3">
+			<button class="btn btn-outline-secondary" @onclick="PaginaAnterior" disabled="@(_pagina <= 1)">Anterior</button>
+			<span>Página @_pagina de @_totalPaginas (@_totalElementos elementos)</span>
+			<button class="btn btn-outline-secondary" @onclick="PaginaSiguiente" disabled="@(_pagina >= _totalPaginas)">Siguiente</button>
+		</div>
+	</div>
+}
+
+@code {
+	private bool cargando = true;
+	private string? error;
+
+	private bool OrdenAsc { get; set; } = true;
+	private bool EstadoSinComenzar { get; set; } = true;
+	private bool EstadoEnCurso { get; set; } = true;
+	private bool EstadoFinalizado { get; set; } = true;
+
+	private List<Carrera> Filtradas { get; set; } = new();
+    
+	private int _pagina = 1;
+	private int _tamanoPagina = 10;
+	private int _totalPaginas = 1;
+	private int _totalElementos = 0;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await Buscar();
+	}
+
+	private async Task Cargar()
+	{
+		try
+		{
+			cargando = true;
+			error = null;
+
+			var estados = new List<EstadoEvento>();
+			if (EstadoSinComenzar) estados.Add(EstadoEvento.SinComenzar);
+			if (EstadoEnCurso) estados.Add(EstadoEvento.EnCurso);
+			if (EstadoFinalizado) estados.Add(EstadoEvento.Finalizado);
+
+			var pageResult = await CarreraService.ListarCarrerasPaginado(_pagina, _tamanoPagina, OrdenAsc, estados);
+			
+			var ordered = OrdenAsc
+				? pageResult.Items.OrderBy(c => c.Evento!.FechaInicio)
+				: pageResult.Items.OrderByDescending(c => c.Evento!.FechaInicio);
+			Filtradas = ordered.ToList();
+			_totalElementos = pageResult.TotalCount;
+			_totalPaginas = pageResult.TotalPages;
+		}
+		catch (Exception ex)
+		{
+			error = $"Error al cargar carreras: {ex.Message}";
+		}
+		finally
+		{
+			cargando = false;
+			StateHasChanged();
+		}
+	}
+
+	private async Task Buscar()
+	{
+		_pagina = 1;
+		await Cargar();
+	}
+
+	private async Task Limpiar()
+	{
+		EstadoSinComenzar = true;
+		EstadoEnCurso = true;
+		EstadoFinalizado = true;
+		OrdenAsc = true;
+		_pagina = 1;
+		await Cargar();
+	}
+
+	private async Task PaginaAnterior()
+	{
+		if (_pagina > 1)
+		{
+			_pagina--;
+			await Cargar();
+		}
+	}
+
+	private async Task PaginaSiguiente()
+	{
+		if (_pagina < _totalPaginas)
+		{
+			_pagina++;
+			await Cargar();
+		}
+	}
+
+	private void OnOrdenChange(ChangeEventArgs e)
+	{
+		var s = e.Value?.ToString();
+		OrdenAsc = string.Equals(s, "true", StringComparison.OrdinalIgnoreCase);
+	}
+
+	private string GetBadgeClass(EstadoEvento estado)
+	{
+		return estado switch
+		{
+			EstadoEvento.SinComenzar => "text-bg-info",
+			EstadoEvento.EnCurso => "text-bg-warning",
+			EstadoEvento.Finalizado => "text-bg-secondary",
+			_ => "text-bg-light"
+		};
+	}
+
+	private void IrAResultados(Guid carreraId)
+	{
+		Nav.NavigateTo($"/carreras/{carreraId}/resultados");
+	}
+}
+

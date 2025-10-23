@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using GestorEventosDeportivos.Shared.Infrastructure.Persistence;
 using GestorEventosDeportivos.Modules.Usuarios.Application.Services;
 using GestorEventosDeportivos.Modules.ProgresoCarreras.Application;
+using GestorEventosDeportivos.Modules.ProgresoCarreras.Api;
+using GestorEventosDeportivos.Modules.Carreras.Application.Services;
 using CurrieTechnologies.Razor.SweetAlert2;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +15,14 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddTransient<IUsuarioServices, UsuarioServices>();
 builder.Services.AddTransient<IProgresoService , ProgresoServices>();
+builder.Services.AddTransient<ICarreraService , CarreraService>();
+
+// Generador automaticos de lecturas (solo si esta habilitado)
+var generadorHabilitado = builder.Configuration.GetValue<bool>("GeneradorLecturas:Habilitado", true);
+if (generadorHabilitado)
+{
+    builder.Services.AddHostedService<GeneradorAutomaticoLecturas>();
+}
 
 //DB Context
 var conn = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -45,5 +55,9 @@ app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+// Mapear endpoints de API
+app.MapGenerarLecturaProgresoEndpoints();
+app.MapControlGeneradorEndpoints();
 
 app.Run();
