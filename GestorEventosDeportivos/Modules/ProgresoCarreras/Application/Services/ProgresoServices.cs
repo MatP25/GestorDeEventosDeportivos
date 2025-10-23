@@ -1,4 +1,6 @@
 using GestorEventosDeportivos.Modules.Carreras.Domain.Entities;
+using GestorEventosDeportivos.Modules.Carreras.Application.Services;
+using GestorEventosDeportivos.Modules.Carreras.Domain.Enums;
 using GestorEventosDeportivos.Modules.ProgresoCarreras.Datatypes;
 using GestorEventosDeportivos.Modules.ProgresoCarreras.Domain.Entities;
 using GestorEventosDeportivos.Shared.Infrastructure.Persistence;
@@ -9,10 +11,12 @@ namespace GestorEventosDeportivos.Modules.ProgresoCarreras.Application;
 public class ProgresoServices : IProgresoService
 {
     private readonly AppDbContext _context;
+    private readonly ICarreraService _carreraService;
 
-    public ProgresoServices(AppDbContext context)
+    public ProgresoServices(AppDbContext context, ICarreraService carreraService)
     {
         _context = context;
+        _carreraService = carreraService;
     }
 
     public async Task<Participacion> VerProgresoDeParticipanteEnCarrera(Guid carreraId, Guid participanteId)
@@ -79,8 +83,38 @@ public class ProgresoServices : IProgresoService
         if (participacion == null) 
             throw new NotFoundException($"No se encontró la participación del usuario de Id {participanteId} en la carrera {carreraId}.");
 
-        participacion.Progreso.Add(puntoDeControlPosicion, tiempo);
+        // Registrar progreso en el punto indicado (si ya existe, actualiza el tiempo)
+        participacion.Progreso[puntoDeControlPosicion] = tiempo;
+
+        // Actualizar estado del participante según el progreso
+        // Obtener la cantidad total de puntos de control de la carrera (por evento)
+        var carrera = await _context.Carreras
+            .Include(c => c.PuntosDeControl)
+            .FirstOrDefaultAsync(c => c.EventoId == carreraId);
+
+        if (carrera != null)
+        {
+            var totalPuntos = carrera.PuntosDeControl.Count;
+
+            if (totalPuntos > 0)
+            {
+                // Si es la primera lectura y estaba SinComenzar, pasa a EnCurso
+                if (participacion.Estado == EstadoParticipanteEnCarrera.SinComenzar)
+                {
+                    participacion.Estado = EstadoParticipanteEnCarrera.EnCurso;
+                }
+
+                // Si alcanzó el último punto, marcar como Completada
+                if (puntoDeControlPosicion >= totalPuntos)
+                {
+                    participacion.Estado = EstadoParticipanteEnCarrera.Completada;
+                }
+            }
+        }
 
         await _context.SaveChangesAsync();
+
+        // Recalcular estado del evento tras el cambio de estado del participante
+        await _carreraService.RecalcularEstadoEvento(carreraId);
     }
 }

@@ -1,4 +1,5 @@
 using GestorEventosDeportivos.Modules.Carreras.Domain.Enums;
+using GestorEventosDeportivos.Modules.Carreras.Application.Services;
 using GestorEventosDeportivos.Shared.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -104,7 +105,11 @@ public class GeneradorAutomaticoLecturas : BackgroundService
             participacionSeleccionada.Estado = EstadoParticipanteEnCarrera.Completada;
         }
 
-        await context.SaveChangesAsync();
+    await context.SaveChangesAsync();
+
+    // Recalcular estado del evento por si corresponde finalizarlo
+    var carreraService = scope.ServiceProvider.GetRequiredService<ICarreraService>();
+    await carreraService.RecalcularEstadoEvento(participacionSeleccionada.EventoId);
 
         _logger.LogInformation(
             "Lectura generada - Participante: {Nombre} {Apellido} (#{NumeroCorredor}) | Punto: {Punto}/{Total} | Tiempo: {Tiempo} | Estado: {Estado}",

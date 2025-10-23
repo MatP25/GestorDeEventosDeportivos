@@ -1,0 +1,189 @@
+@page "/perfil"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Web
+@inject AuthenticationStateProvider AuthStateProvider
+@inject GestorEventosDeportivos.Modules.Usuarios.Application.Services.IUsuarioServices UsuarioServices
+@inject GestorEventosDeportivos.Modules.Carreras.Application.Services.ICarreraService CarreraService
+@using GestorEventosDeportivos.Modules.Carreras.Domain.Enums
+@using GestorEventosDeportivos.Modules.ProgresoCarreras.Domain.Entities
+@inject NavigationManager Nav
+
+<PageTitle>Mi Perfil</PageTitle>
+
+@code {
+    private GestorEventosDeportivos.Modules.Usuarios.Domain.Entities.PerfilUsuarioDTO? PerfilData { get; set; }
+    private string? Error { get; set; }
+    private List<Participacion> ParticipacionesUsuario { get; set; } = new();
+    private Dictionary<Guid, Guid> CarreraPorEvento { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = state.User;
+        if (!user.Identity?.IsAuthenticated ?? true)
+        {
+            Error = "No autenticado";
+            return;
+        }
+        var idStr = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (Guid.TryParse(idStr, out var id))
+        {
+            try
+            {
+                PerfilData = await UsuarioServices.ObtenerDatosUsuarioId(id);
+                var parts = await CarreraService.ListarParticipacionesDeUsuario(id);
+                ParticipacionesUsuario = parts.ToList();
+
+                // Mapear carreras por evento para poder armar links a resultados
+                var carreras = await CarreraService.ListarCarreras();
+                CarreraPorEvento = carreras
+                    .GroupBy(c => c.EventoId)
+                    .ToDictionary(g => g.Key, g => g.First().Id);
+            }
+            catch (Exception ex)
+            {
+                Error = ex.Message;
+            }
+        }
+        else
+        {
+            Error = "No se pudo determinar el usuario";
+        }
+    }
+}
+
+<div class="container">
+    <h3>Mi Perfil</h3>
+
+    @if (!string.IsNullOrEmpty(Error))
+    {
+        <div class="alert alert-danger">@Error</div>
+    }
+    else if (PerfilData is null)
+    {
+        <p>Cargando...</p>
+    }
+    else
+    {
+        <dl class="row">
+            <dt class="col-sm-3">Nombre</dt>
+            <dd class="col-sm-9">@PerfilData.Nombre</dd>
+            <dt class="col-sm-3">Apellido</dt>
+            <dd class="col-sm-9">@PerfilData.Apellido</dd>
+            <dt class="col-sm-3">Email</dt>
+            <dd class="col-sm-9">@PerfilData.Email</dd>
+            <dt class="col-sm-3">Fecha de nacimiento</dt>
+            <dd class="col-sm-9">@PerfilData.FechaNac</dd>
+        </dl>
+
+        <hr />
+        <h5>Mis inscripciones (@ParticipacionesUsuario.Count)</h5>
+        @if (ParticipacionesUsuario.Count == 0)
+        {
+            <p class="text-muted">No estás inscripto en ninguna carrera.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead>
+                        <tr>
+                            <th>Evento</th>
+                            <th>Fecha</th>
+                            <th>Ubicación</th>
+                            <th>Número</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in ParticipacionesUsuario)
+                        {
+                            <tr>
+                                <td>@p.Evento?.Nombre</td>
+                                <td>@p.Evento?.FechaInicio.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@p.Evento?.Ubicacion</td>
+                                <td>@p.NumeroCorredor</td>
+                                <td><span class="badge @GetEstadoBadge(p.Estado)">@p.Estado</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        <h5 class="mt-4">Mis resultados</h5>
+        {
+            var compitio = ParticipacionesUsuario.Where(x => x.Estado != EstadoParticipanteEnCarrera.SinComenzar).ToList();
+        }
+        @if (ParticipacionesUsuario.Any(x => x.Estado != EstadoParticipanteEnCarrera.SinComenzar))
+        {
+            <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead>
+                        <tr>
+                            <th>Evento</th>
+                            <th>Estado</th>
+                            <th>Tiempo</th>
+                            <th>Puesto</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in ParticipacionesUsuario.Where(x => x.Estado != EstadoParticipanteEnCarrera.SinComenzar))
+                        {
+                            <tr>
+                                <td>@p.Evento?.Nombre</td>
+                                <td><span class="badge @GetEstadoBadge(p.Estado)">@p.Estado</span></td>
+                                <td>@FormatearTiempoFinal(p)</td>
+                                <td>@(p.Puesto == 0 ? "--" : p.Puesto.ToString())</td>
+                                <td class="text-end">
+                                    @if (p.Evento is not null 
+                                        && p.Evento.EstadoEvento == EstadoEvento.Finalizado 
+                                        && CarreraPorEvento.TryGetValue(p.EventoId, out var carreraId))
+                                    {
+                                        <a class="btn btn-sm btn-outline-primary" href="/carreras/@carreraId/resultados">Ver resultados</a>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p class="text-muted">Aún no compitiste en ninguna carrera.</p>
+        }
+    }
+</div>
+
+@code {
+    private static string GetEstadoBadge(EstadoParticipanteEnCarrera estado) => estado switch
+    {
+        EstadoParticipanteEnCarrera.SinComenzar => "text-bg-info",
+        EstadoParticipanteEnCarrera.EnCurso => "text-bg-warning",
+        EstadoParticipanteEnCarrera.Completada => "text-bg-success",
+        EstadoParticipanteEnCarrera.Abandonada => "text-bg-secondary",
+        _ => "text-bg-light"
+    };
+
+    private static string FormatearTiempo(TimeSpan t)
+    {
+        if (t.TotalHours >= 1)
+            return $"{(int)t.TotalHours:00}:{t.Minutes:00}:{t.Seconds:00}";
+        return $"{t.Minutes:00}:{t.Seconds:00}";
+    }
+
+    private string FormatearTiempoFinal(Participacion p)
+    {
+        if (p?.Progreso == null || p.Progreso.Count == 0) return "--";
+        var maxTiempo = p.Progreso.Values.Max();
+        return FormatearTiempo(maxTiempo);
+    }
+}
