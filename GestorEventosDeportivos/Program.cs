@@ -5,6 +5,7 @@ using GestorEventosDeportivos.Modules.Usuarios.Application.Services;
 using GestorEventosDeportivos.Modules.ProgresoCarreras.Application;
 using GestorEventosDeportivos.Modules.ProgresoCarreras.Api;
 using GestorEventosDeportivos.Modules.Carreras.Application.Services;
+using CurrieTechnologies.Razor.SweetAlert2;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +28,11 @@ if (generadorHabilitado)
 var conn = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(conn, ServerVersion.AutoDetect(conn)));
+
+//SweetAlert2
+builder.Services.AddSweetAlert2(options => {
+   options.Theme = SweetAlertTheme.Dark;
+ });
 
 var app = builder.Build();
 
