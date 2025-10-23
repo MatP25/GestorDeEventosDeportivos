@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using GestorEventosDeportivos.Shared.Infrastructure.Persistence;
 using GestorEventosDeportivos.Modules.Usuarios.Application.Services;
 using GestorEventosDeportivos.Modules.ProgresoCarreras.Application;
+using CurrieTechnologies.Razor.SweetAlert2;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +18,11 @@ builder.Services.AddTransient<IProgresoService , ProgresoServices>();
 var conn = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(conn, ServerVersion.AutoDetect(conn)));
+
+//SweetAlert2
+builder.Services.AddSweetAlert2(options => {
+   options.Theme = SweetAlertTheme.Dark;
+ });
 
 var app = builder.Build();
 

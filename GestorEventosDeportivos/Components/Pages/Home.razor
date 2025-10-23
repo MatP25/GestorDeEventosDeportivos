@@ -33,7 +33,9 @@ Welcome to your new app.
         Console.WriteLine("Progreso carrera 1: ");
         foreach (KeyValuePair<uint, ProgresoPuntoDeControlDTO> pc in p1.ProgresoPorPuntosDeControl) {
             Console.WriteLine($"Punto {pc.Key}: Posicion {pc.Value.Posicion}, Tiempos:");
-            foreach (KeyValuePair<string, TimeSpan?> t in pc.Value.TiemposDeParticipantes.OrderBy(k => k.Value)) {
+            foreach (
+                KeyValuePair<string, TimeSpan?> t in 
+                pc.Value.TiemposDeParticipantes.OrderBy(k => k.Value == null).ThenBy(k => k.Value)) {
                 Console.WriteLine($"{t.Key} / Tiempo: {t.Value}");
             }
         }
@@ -44,7 +46,7 @@ Welcome to your new app.
         Console.WriteLine("Progreso carrera 3: ");
         foreach (KeyValuePair<uint, ProgresoPuntoDeControlDTO> pc in p3.ProgresoPorPuntosDeControl) {
             Console.WriteLine($"Punto {pc.Key}: Posicion {pc.Value.Posicion}, Tiempos:");
-            foreach (KeyValuePair<string, TimeSpan?> t in pc.Value.TiemposDeParticipantes.OrderBy(k => k.Value)) {
+            foreach (KeyValuePair<string, TimeSpan?> t in pc.Value.TiemposDeParticipantes.OrderBy(k => k.Value == null).ThenBy(k => k.Value)) {
                 Console.WriteLine($"{t.Key} / Tiempo: {t.Value}");
             }
         }
