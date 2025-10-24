@@ -1,0 +1,90 @@
+@page "/waiting/{userId:guid}"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager Nav
+
+<PageTitle>Verificación de email</PageTitle>
+
+<h3>Verificación de email</h3>
+<p>Se te ha enviado un email con un enlace de verificación. Como es un flujo simulado, podés presionar el botón para completar la verificación ahora.</p>
+
+<div class="@alertClass d-flex align-items-center gap-2" role="status">
+    @if (showSpinner)
+    {
+        <div class="spinner-border spinner-border-sm" aria-hidden="true"></div>
+    }
+    <span>@statusMessage</span>
+</div>
+
+<button class="btn btn-primary mt-3" disabled="@isVerifying" @onclick="VerifyNowAsync">
+    @if (isVerifying)
+    {
+        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+        <span>Verificando…</span>
+    }
+    else
+    {
+        <span>Verificar email</span>
+    }
+</button>
+
+@code {
+    [Parameter] public Guid userId { get; set; }
+
+    private HubConnection? _connection;
+    private string statusMessage = "Esperando confirmación de email…";
+    private string alertClass = "alert alert-info";
+    private bool showSpinner = true;
+    private bool isVerifying = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Crear conexión SignalR del lado del servidor (Blazor Server) hacia nuestro hub
+        _connection = new HubConnectionBuilder()
+            .WithUrl(Nav.ToAbsoluteUri("/hubs/verification"))
+            .WithAutomaticReconnect()
+            .Build();
+
+        _connection.On("EmailVerified", async () =>
+        {
+            alertClass = "alert alert-success";
+            statusMessage = "¡Email verificado! Redirigiendo…";
+            showSpinner = false;
+            StateHasChanged();
+            // Pequeño retraso para que el usuario vea el estado
+            await Task.Delay(500);
+            Nav.NavigateTo("/");
+        });
+
+        try
+        {
+            await _connection.StartAsync();
+            await _connection.InvokeAsync("JoinUserGroup", userId.ToString());
+        }
+        catch
+        {
+            // Si no se puede conectar, el flujo manual igual funciona con el botón
+        }
+    }
+
+    private async Task VerifyNowAsync()
+    {
+        isVerifying = true;
+        alertClass = "alert alert-warning";
+        statusMessage = "Verificando…";
+        showSpinner = true;
+        StateHasChanged();
+        // Navegamos al endpoint para que el navegador reciba la cookie y el endpoint redirija a home
+        var url = $"/verify/auto?userId={userId}";
+        Nav.NavigateTo(url, forceLoad: true);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_connection is not null)
+        {
+            await _connection.DisposeAsync();
+        }
+    }
+}
