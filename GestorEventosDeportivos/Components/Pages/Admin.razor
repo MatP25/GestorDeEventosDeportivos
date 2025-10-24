@@ -1,0 +1,288 @@
+@page "/admin"
+@attribute [Authorize(Policy = "AdminOnly")]
+@rendermode InteractiveServer
+@using GestorEventosDeportivos.Modules.Carreras.Domain.Entities
+@using Microsoft.AspNetCore.Components.Web
+@using GestorEventosDeportivos.Modules.Carreras.Domain.Enums
+@inject GestorEventosDeportivos.Modules.Carreras.Application.Services.ICarreraService CarreraService
+
+<PageTitle>Administración</PageTitle>
+
+<div class="container mt-3">
+    <h3>Administración</h3>
+
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(ActiveTab==Tab.Evento?"active":"")" @onclick="(()=> ActiveTab=Tab.Evento)">Crear Evento</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(ActiveTab==Tab.Carrera?"active":"")" @onclick="(()=> ActiveTab=Tab.Carrera)">Crear Carrera</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(ActiveTab==Tab.Puntos?"active":"")" @onclick="(()=> ActiveTab=Tab.Puntos)">Gestionar Puntos de Control</button>
+        </li>
+    </ul>
+
+    <div class="tab-content p-3 border border-top-0">
+        @if (ActiveTab == Tab.Evento)
+        {
+            <div>
+                <h5>Crear Evento</h5>
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-3">
+                        <label>Nombre</label>
+                        <input class="form-control" @bind="NombreEvento" />
+                    </div>
+                    <div class="col-md-3">
+                        <label>Fecha</label>
+                        <InputDate class="form-control" @bind-Value="FechaEvento" />
+                    </div>
+                    <div class="col-md-2">
+                        <label>Capacidad</label>
+                        <input type="number" min="1" class="form-control" @bind="CapacidadEvento" />
+                    </div>
+                    <div class="col-md-3">
+                        <label>Ubicación</label>
+                        <input class="form-control" @bind="UbicacionEvento" />
+                    </div>
+                    <div class="col-md-1">
+                        <button class="btn btn-primary w-100" @onclick="OnCrearEvento">Crear</button>
+                    </div>
+                </div>
+
+                <hr />
+                <h6>Eventos existentes</h6>
+                <ul class="list-group">
+                    @foreach (var e in Eventos)
+                    {
+                        <li class="list-group-item">@e.Nombre - @e.FechaInicio.ToShortDateString() - @e.Ubicacion - Capacidad: @e.CantidadParticipantes</li>
+                    }
+                </ul>
+            </div>
+        }
+        else if (ActiveTab == Tab.Carrera)
+        {
+            <div>
+                <h5>Crear Carrera</h5>
+                <div class="mb-2">
+                    <label>Evento</label>
+                    <select class="form-select" value="@EventoSeleccionadoIdString" @onchange="OnEventoChangedAsync">
+                        @foreach (var e in Eventos)
+                        {
+                            <option value="@e.Id">@e.Nombre</option>
+                        }
+                    </select>
+                    @if (EventoSeleccionadoId is not null)
+                    {
+                        <small class="d-block mt-1">Estado del evento: <span class="badge @GetEstadoBadgeClass(EstadoEventoSeleccionado)">@EstadoEventoSeleccionado</span></small>
+                    }
+                </div>
+
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-3">
+                        <label>Longitud (m)</label>
+                        <input type="number" min="1" class="form-control" @bind="LongitudCarrera" disabled="@(!EventoEditable)" />
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-primary w-100" @onclick="OnCrearCarrera" disabled="@(!EventoEditable)">Crear</button>
+                    </div>
+                </div>
+
+                <hr />
+                <h6>Carreras del evento seleccionado</h6>
+                <ul class="list-group">
+                    @foreach (var c in CarrerasSeleccionadas)
+                    {
+                        <li class="list-group-item">Carrera @c.Id.ToString().Substring(0,8) - Longitud: @c.Longitud m</li>
+                    }
+                </ul>
+            </div>
+        }
+        else if (ActiveTab == Tab.Puntos)
+        {
+            <div>
+                <h5>Gestionar Puntos de Control</h5>
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <label>Evento</label>
+                        <select class="form-select" value="@EventoSeleccionadoIdString" @onchange="OnEventoChangedAsync">
+                            @foreach (var e in Eventos)
+                            {
+                                <option value="@e.Id">@e.Nombre</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label>Carrera</label>
+                        <select class="form-select" value="@CarreraSeleccionadaIdString" @onchange="OnCarreraChangedAsync" disabled="@(!EventoEditable)">
+                            @foreach (var c in CarrerasSeleccionadas)
+                            {
+                                <option value="@c.Id">@c.Id.ToString().Substring(0,8) - @c.Longitud m</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        @if (EventoSeleccionadoId is not null)
+                        {
+                            <div>
+                                <label class="d-block">&nbsp;</label>
+                                <span class="badge @GetEstadoBadgeClass(EstadoEventoSeleccionado)">Estado: @EstadoEventoSeleccionado</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="row g-2 align-items-end mt-2">
+                    <div class="col-md-3">
+                        <label>Posición</label>
+                        <input type="number" min="1" class="form-control" @bind="PosicionPunto" disabled="@(!EventoEditable)" />
+                    </div>
+                    <div class="col-md-6">
+                        <label>Ubicación</label>
+                        <input class="form-control" @bind="UbicacionPunto" disabled="@(!EventoEditable)" />
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-primary w-100" @onclick="OnCrearPunto" disabled="@(!EventoEditable)">Agregar Punto</button>
+                    </div>
+                </div>
+
+                <hr />
+                <h6>Puntos de Control</h6>
+                <ul class="list-group">
+                    @foreach (var p in Puntos)
+                    {
+                        <li class="list-group-item">Posición @p.Posicion: @p.Ubicacion</li>
+                    }
+                </ul>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    enum Tab { Evento, Carrera, Puntos }
+    private Tab ActiveTab { get; set; } = Tab.Evento;
+
+    private List<Evento> Eventos { get; set; } = new();
+    private Guid? EventoSeleccionadoId { get; set; }
+    private string EventoSeleccionadoIdString
+    {
+        get => EventoSeleccionadoId?.ToString() ?? string.Empty;
+        set
+        {
+            EventoSeleccionadoId = Guid.TryParse(value, out var id) ? id : null;
+        }
+    }
+
+    private List<Carrera> CarrerasSeleccionadas { get; set; } = new();
+    private Guid? CarreraSeleccionadaId { get; set; }
+    private string CarreraSeleccionadaIdString
+    {
+        get => CarreraSeleccionadaId?.ToString() ?? string.Empty;
+        set
+        {
+            CarreraSeleccionadaId = Guid.TryParse(value, out var id) ? id : null;
+        }
+    }
+
+    private List<PuntoDeControl> Puntos { get; set; } = new();
+    private bool EventoEditable => (Eventos.FirstOrDefault(e => e.Id == EventoSeleccionadoId)?.EstadoEvento ?? GestorEventosDeportivos.Modules.Carreras.Domain.Enums.EstadoEvento.SinComenzar) == GestorEventosDeportivos.Modules.Carreras.Domain.Enums.EstadoEvento.SinComenzar;
+
+    private EstadoEvento EstadoEventoSeleccionado => Eventos.FirstOrDefault(e => e.Id == EventoSeleccionadoId)?.EstadoEvento ?? EstadoEvento.SinComenzar;
+
+    private string GetEstadoBadgeClass(EstadoEvento estado) => estado switch
+    {
+        EstadoEvento.SinComenzar => "bg-secondary",
+        EstadoEvento.EnCurso => "bg-warning text-dark",
+        EstadoEvento.Finalizado => "bg-success",
+        _ => "bg-secondary"
+    };
+
+    // Campos de formulario
+    private string NombreEvento { get; set; } = string.Empty;
+    private DateTime FechaEvento { get; set; } = DateTime.Today;
+    private uint CapacidadEvento { get; set; } = 100;
+    private string UbicacionEvento { get; set; } = string.Empty;
+
+    private uint LongitudCarrera { get; set; } = 10000;
+
+    private uint PosicionPunto { get; set; } = 1;
+    private string UbicacionPunto { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefrescarEventosAsync();
+    }
+
+    private async Task RefrescarEventosAsync()
+    {
+        var eventos = await CarreraService.ListarEventos();
+        Eventos = eventos.ToList();
+        if (Eventos.Count > 0 && (EventoSeleccionadoId is null || !Eventos.Any(e => e.Id == EventoSeleccionadoId)))
+        {
+            EventoSeleccionadoId = Eventos.First().Id;
+        }
+        await RefrescarCarrerasAsync();
+    }
+
+    private async Task RefrescarCarrerasAsync()
+    {
+        var carreras = await CarreraService.ListarCarreras();
+        CarrerasSeleccionadas = EventoSeleccionadoId is null ? new() : carreras.Where(c => c.EventoId == EventoSeleccionadoId).ToList();
+        if (CarrerasSeleccionadas.Count > 0 && (CarreraSeleccionadaId is null || !CarrerasSeleccionadas.Any(c => c.Id == CarreraSeleccionadaId)))
+        {
+            CarreraSeleccionadaId = CarrerasSeleccionadas.First().Id;
+        }
+        await RefrescarPuntosAsync();
+    }
+
+    private async Task RefrescarPuntosAsync()
+    {
+        Puntos = CarreraSeleccionadaId is null ? new() : (await CarreraService.ObtenerCarreraConDetalle(CarreraSeleccionadaId.Value))?.PuntosDeControl ?? new();
+    }
+
+    // Handlers UI
+    async Task OnCrearEvento()
+    {
+        if (string.IsNullOrWhiteSpace(NombreEvento) || string.IsNullOrWhiteSpace(UbicacionEvento)) return;
+        await CarreraService.CrearEvento(NombreEvento, FechaEvento, CapacidadEvento, UbicacionEvento);
+        NombreEvento = string.Empty; UbicacionEvento = string.Empty; CapacidadEvento = 100; FechaEvento = DateTime.Today;
+        await RefrescarEventosAsync();
+    }
+
+    async Task OnEventoChangedAsync(ChangeEventArgs e)
+    {
+        EventoSeleccionadoId = Guid.TryParse(e.Value?.ToString(), out var id) ? id : null;
+        await RefrescarCarrerasAsync();
+    }
+
+    async Task OnCrearCarrera()
+    {
+        if (EventoSeleccionadoId is null || LongitudCarrera < 1) return;
+        // Crear sin puntos de control inicialmente
+        await CarreraService.CrearCarrera(EventoSeleccionadoId.Value, LongitudCarrera, Enumerable.Empty<(uint, string)>());
+        LongitudCarrera = 10000;
+        await RefrescarCarrerasAsync();
+    }
+
+    async Task OnCarreraChangedAsync(ChangeEventArgs e)
+    {
+        CarreraSeleccionadaId = Guid.TryParse(e.Value?.ToString(), out var id) ? id : null;
+        await RefrescarPuntosAsync();
+    }
+
+    async Task OnCrearPunto()
+    {
+        if (CarreraSeleccionadaId is null || PosicionPunto < 1 || string.IsNullOrWhiteSpace(UbicacionPunto)) return;
+        try
+        {
+            await CarreraService.AgregarPuntoAlaCarrera(CarreraSeleccionadaId.Value, PosicionPunto, UbicacionPunto);
+            PosicionPunto = 1; UbicacionPunto = string.Empty;
+            await RefrescarPuntosAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+}

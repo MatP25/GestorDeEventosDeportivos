@@ -7,7 +7,27 @@
 
     <main>
         <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            <AuthorizeView>
+                <NotAuthorized>
+                    <NavLink class="nav-link" href="registro" Match="NavLinkMatch.All">
+                        <span class="bi bi-person-plus" aria-hidden="true"></span> Registro
+                    </NavLink>
+                    <NavLink class="nav-link" href="login" Match="NavLinkMatch.All">
+                        <span class="bi bi-box-arrow-in-right" aria-hidden="true"></span> Iniciar sesión
+                    </NavLink>
+                </NotAuthorized>
+                <Authorized>
+                    <NavLink class="nav-link" href="perfil">
+                        <span class="bi bi-person-circle" aria-hidden="true"></span> Mi Perfil
+                    </NavLink>
+                    <form method="post" action="/auth/logout" class="d-inline">
+                        <AntiforgeryToken />
+                        <button type="submit" class="btn btn-link nav-link p-0">
+                            <span class="bi bi-box-arrow-right" aria-hidden="true"></span> Cerrar sesión
+                        </button>
+                    </form>
+                </Authorized>
+            </AuthorizeView>
         </div>
 
         <article class="content px-4">

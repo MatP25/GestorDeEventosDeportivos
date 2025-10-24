@@ -21,4 +21,8 @@ public interface ICarreraService{
     Task<CarreraResultados?> ObtenerResultadosCarrera(Guid carreraId);
     Task<Carrera?> ObtenerCarreraConDetalle(Guid carreraId);
     Task<PagedResult<Participacion>> ListarParticipacionesCarreraPaginado(Guid carreraId, int page, int pageSize);
+    Task<IEnumerable<Evento>> ListarEventos();
+    Task<PuntoDeControl> AgregarPuntoAlaCarrera(Guid carreraId, uint posicion, string ubicacion);
+    Task<Evento> RecalcularEstadoEvento(Guid eventoId);
+    Task<IEnumerable<Participacion>> ListarParticipacionesDeUsuario(Guid usuarioId);
 }

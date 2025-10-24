@@ -1,0 +1,22 @@
+@page "/acceso-denegado"
+<PageTitle>Acceso denegado</PageTitle>
+
+<div class="container mt-4">
+    <h3>Acceso denegado</h3>
+    <p>No tenés permisos para ver esta página.</p>
+    <a class="btn btn-link" href="/">Volver al inicio</a>
+    <a class="btn btn-primary" href="/login">Iniciar sesión</a>
+    
+</div>
+@page "/acceso-denegado"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Web
+
+<PageTitle>Acceso denegado</PageTitle>
+
+<div class="container">
+    <div class="alert alert-warning mt-3" role="alert">
+        No tenés permisos para acceder a este contenido.
+    </div>
+    <a class="btn btn-link" href="/">Volver al inicio</a>
+</div>
