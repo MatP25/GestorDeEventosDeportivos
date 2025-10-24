@@ -80,6 +80,10 @@ else
 							{
 								<button class="btn btn-sm btn-outline-primary" @onclick="() => IrAResultados(c.Id)">Ver resultados</button>
 							}
+							@if (c.Evento!.EstadoEvento == EstadoEvento.SinComenzar)
+							{
+								<button class="btn btn-sm btn-outline-primary" @onclick="() => IrADetalles(c.Id)">Ver detalle</button>
+							}
 						</div>
 					</li>
 				}
@@ -200,6 +204,11 @@ else
 	private void IrAResultados(Guid carreraId)
 	{
 		Nav.NavigateTo($"/carreras/{carreraId}/resultados");
+	}
+
+	private void IrADetalles(Guid carreraId)
+	{
+		Nav.NavigateTo($"carreras/{carreraId}/detalles");
 	}
 }
 

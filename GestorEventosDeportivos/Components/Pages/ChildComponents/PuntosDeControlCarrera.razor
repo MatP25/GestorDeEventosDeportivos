@@ -1,0 +1,17 @@
+@using GestorEventosDeportivos.Modules.Carreras.Domain.Entities
+
+@code 
+{
+    [Parameter]
+    public Carrera? Carrera { get; set; }
+}
+
+<h5 class="mt-4">Puntos de control (@(Carrera?.PuntosDeControl?.Count ?? 0))</h5>
+<ul class="list-group mb-3">
+    @foreach (var pc in (Carrera?.PuntosDeControl ?? new List<PuntoDeControl>()).OrderBy(pc => pc.Posicion))
+    {
+        <li class="list-group-item d-flex justify-content-between">
+            <span>Posición @pc.Posicion — @pc.Ubicacion</span>
+        </li>
+    }
+</ul>

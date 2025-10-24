@@ -1,0 +1,195 @@
+@page "/carreras/{id:guid}/detalles"
+@using GestorEventosDeportivos.Modules.Carreras.Application.Services
+@using GestorEventosDeportivos.Modules.Carreras.Domain.Entities
+@using GestorEventosDeportivos.Modules.ProgresoCarreras.Domain.Entities
+@using GestorEventosDeportivos.Shared.Domain.Common
+
+@rendermode InteractiveServer
+
+@inject ICarreraService CarreraService
+@inject NavigationManager Nav
+
+<PageTitle>Detalles de la carrera</PageTitle>
+
+<h1>Detalles de la carrera</h1>
+
+@if (cargando)
+{
+    <p>Cargando carrera</p>
+}
+else if (!string.IsNullOrEmpty(error))
+{
+    <div class="alert alert-danger">@error</div>
+}
+else if (Carrera is null)
+{
+    <div class="alert alert-warning">No se encontró la carrera solicitada.</div>
+}
+else
+{
+    <GestorEventosDeportivos.Components.Pages.ChildComponents.EncabezadoDetallesCarrera 
+        Carrera="@Carrera"
+    />
+
+    <h4 class="mt-4">Participantes inscriptos (@_totalElementos)</h4>
+    <p>Hay @(Carrera?.Evento?.CantidadParticipantes - _totalElementos) cupos disponibles.</p>
+
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Participante</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{int Counter = 0;}
+                @foreach (var p in Participaciones)
+                {
+                    <tr>
+                        <td>@(_pagina > 1 ? ( _tamanoPagina * (_pagina - 1) + ++Counter ) : ++Counter )</td>
+                        <td>@p.Participante?.Nombre @p.Participante?.Apellido</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <button class="btn btn-outline-secondary" @onclick="PaginaAnterior" disabled="@(_pagina <= 1)">Anterior</button>
+        <span>Página @_pagina de @_totalPaginas (@_totalElementos elementos)</span>
+        <button class="btn btn-outline-secondary" @onclick="PaginaSiguiente" disabled="@(_pagina >= _totalPaginas)">Siguiente</button>
+    </div>
+
+    <GestorEventosDeportivos.Components.Pages.ChildComponents.PuntosDeControlCarrera
+        Carrera="@Carrera"
+    />
+
+    <button class="btn btn-outline-secondary" @onclick="Volver">Volver</button>
+
+}
+
+@code
+{
+    [Parameter] public Guid id { get; set; }
+
+    private bool cargando = true;
+    private string? error;
+    private Carrera? Carrera;
+    private List<Participacion> Participaciones = new();
+    private int row = 0;
+    private uint? _ultimaPosicionPc;
+    private HashSet<Guid> _expandidos = new();
+    private int _pagina = 1;
+    private int _tamanoPagina = 10;
+    private int _totalPaginas = 1;
+    private int _totalElementos = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            cargando = true;
+            error = null;
+            // Cargar encabezado carrera (evento + PCs)
+            Carrera? c = await CarreraService.ObtenerCarreraConDetalle(id);
+            if (c is null)
+            {
+                error = "No se encontró la carrera";
+                return;
+            }
+            Carrera = c;
+
+            // Primera página de participantes
+            await CargarPagina();
+        }
+        catch (Exception ex)
+        {
+            error = $"Error al cargar resultados: {ex.Message}";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task CargarPagina()
+    {
+        if (Carrera is null) return;
+        cargando = true;
+        try
+        {
+            row = 0;
+            PagedResult<Participacion>? page = await CarreraService.ListarParticipacionesCarreraPaginado(Carrera.Id, _pagina, _tamanoPagina);
+            Participaciones = page.Items.ToList();
+            _totalElementos = page.TotalCount;
+            _totalPaginas = page.TotalPages;
+        }
+        catch (Exception ex)
+        {
+            error = $"Error al cargar participantes: {ex.Message}";
+        }
+        finally
+        {
+            cargando = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task PaginaAnterior()
+    {
+        if (_pagina > 1)
+        {
+            _pagina--;
+            await CargarPagina();
+        }
+    }
+
+    private async Task PaginaSiguiente()
+    {
+        if (_pagina < _totalPaginas)
+        {
+            _pagina++;
+            await CargarPagina();
+        }
+    }
+
+    private void Volver()
+    {
+        Nav.NavigateTo("/carreras");
+    }
+
+    private string TiempoDeParticipante(Participacion p)
+    {
+        if (p.Progreso == null || p.Progreso.Count == 0)
+            return "--";
+
+        // Tiempo del ultimo punto de control de la carrera
+        if (_ultimaPosicionPc.HasValue && p.Progreso.TryGetValue(_ultimaPosicionPc.Value, out var tiempoFinalPc))
+        {
+            return FormatearTiempo(tiempoFinalPc);
+        }
+
+        // Tiempo del ultimo punto de control registrado
+        var maxTiempo = p.Progreso.Values.Max();
+        return FormatearTiempo(maxTiempo);
+    }
+
+    private static string FormatearTiempo(TimeSpan t)
+    {
+        if (t.TotalHours >= 1)
+            return $"{(int)t.TotalHours:00}:{t.Minutes:00}:{t.Seconds:00}";
+        return $"{t.Minutes:00}:{t.Seconds:00}";
+    }
+
+    private void ToggleExpand(Guid participacionId)
+    {
+        if (_expandidos.Contains(participacionId))
+            _expandidos.Remove(participacionId);
+        else
+            _expandidos.Add(participacionId);
+    }
+
+    
+
+}
