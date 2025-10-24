@@ -2,10 +2,14 @@
 @using GestorEventosDeportivos.Modules.Usuarios.Application.Services
 @using GestorEventosDeportivos.Modules.Usuarios.Domain.Entities
 @using System.ComponentModel.DataAnnotations
+@using GestorEventosDeportivos.Modules.EmailVerification.Application
+@using Microsoft.AspNetCore.Components
 
 @rendermode InteractiveServer
 @inject IUsuarioServices usuarioServices
 @inject SweetAlertService Swal;
+@inject VerificationUserService UserVerificationService
+@inject NavigationManager Nav
 
 <script src="_content/CurrieTechnologies.Razor.SweetAlert2/sweetAlert2.min.js"></script>    
 
@@ -170,6 +174,8 @@
        try {
             Usuario usuario = await usuarioServices.RegistrarUsuarioParticipante(Model!.Nombre!, Model!.Apellido!, Model!.Email!, Model!.Password!, DateOnly.FromDateTime(Model.FechaNac));
             AlertRegistroExitoso();
+            var verUser = await UserVerificationService.RegisterAsync(Model!.Email!);
+            Nav.NavigateTo($"/waiting/{verUser.Id}");
         } catch (InvalidDataException ex) {
             AlertRegistroFallido(ex.Message);
         } catch(DuplicateException ex) {
