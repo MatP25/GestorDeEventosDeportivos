@@ -82,6 +82,11 @@ public class CarreraService : ICarreraService
 			.ToListAsync();
 	}
 
+	public async Task<IEnumerable<Evento>> ListarEventos()
+	{
+		return await _db.Eventos.AsNoTracking().OrderBy(e => e.FechaInicio).ToListAsync();
+	}
+
 	public async Task<IEnumerable<Carrera>> ListarCarrerasPorFecha(DateTime fechaDesde, DateTime fechaHasta)
 	{
 		return await _db.Carreras
@@ -174,6 +179,62 @@ public class CarreraService : ICarreraService
 			.FirstOrDefaultAsync(c => c.Id == carreraId);
 	}
 
+	public async Task<PuntoDeControl> AgregarPuntoAlaCarrera(Guid carreraId, uint posicion, string ubicacion)
+	{
+		var carrera = await _db.Carreras.Include(c => c.PuntosDeControl).FirstOrDefaultAsync(c => c.Id == carreraId);
+		if (carrera is null) throw new NotFoundException("Carrera no encontrada");
+
+		if (carrera.PuntosDeControl.Any(p => p.Posicion == posicion))
+		{
+			throw new DuplicateException($"Ya existe un punto en la posición {posicion} para esta carrera.");
+		}
+
+		var pc = new PuntoDeControl
+		{
+			Id = 0, // EF generará el id si es identity o se usará el tipo long; dejamos 0 para que EF lo asigne
+			CarreraId = carreraId,
+			Posicion = posicion,
+			Ubicacion = ubicacion
+		};
+
+		_db.PuntosDeControl.Add(pc);
+		await _db.SaveChangesAsync();
+		return pc;
+	}
+
+	public async Task<Evento> RecalcularEstadoEvento(Guid eventoId)
+	{
+		var ev = await _db.Eventos.FirstOrDefaultAsync(e => e.Id == eventoId);
+		if (ev is null) throw new NotFoundException("Evento no encontrado");
+
+		var participaciones = await _db.Participaciones
+			.Where(p => p.EventoId == eventoId)
+			.Select(p => p.Estado)
+			.ToListAsync();
+
+		var nuevoEstado = CalcularEstadoEventoDesdeParticipaciones(participaciones);
+		if (ev.EstadoEvento != nuevoEstado)
+		{
+			ev.EstadoEvento = nuevoEstado;
+			await _db.SaveChangesAsync();
+		}
+		return ev;
+	}
+
+	private static EstadoEvento CalcularEstadoEventoDesdeParticipaciones(IEnumerable<EstadoParticipanteEnCarrera> estados)
+	{
+		// Regla: si hay alguna EnCurso => Evento EnCurso
+		// si no hay EnCurso pero hay alguna SinComenzar => Evento SinComenzar
+		// si no hay ni EnCurso ni SinComenzar => Evento Finalizado
+		bool anyEnCurso = estados.Any(s => s == EstadoParticipanteEnCarrera.EnCurso);
+		if (anyEnCurso) return EstadoEvento.EnCurso;
+
+		bool anySinComenzar = estados.Any(s => s == EstadoParticipanteEnCarrera.SinComenzar);
+		if (anySinComenzar) return EstadoEvento.SinComenzar;
+
+		return EstadoEvento.Finalizado;
+	}
+
 	public async Task<PagedResult<Participacion>> ListarParticipacionesCarreraPaginado(Guid carreraId, int page, int pageSize)
 	{
 		if (page < 1) page = 1;
@@ -210,5 +271,15 @@ public class CarreraService : ICarreraService
 			Page = page,
 			PageSize = pageSize
 		};
+	}
+
+	public async Task<IEnumerable<Participacion>> ListarParticipacionesDeUsuario(Guid usuarioId)
+	{
+		return await _db.Participaciones
+			.Include(p => p.Evento)
+			.Where(p => p.ParticipanteId == usuarioId)
+			.AsNoTracking()
+			.OrderByDescending(p => p.Evento != null ? p.Evento.FechaInicio : DateTime.MinValue)
+			.ToListAsync();
 	}
 }
