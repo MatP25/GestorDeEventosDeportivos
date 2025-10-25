@@ -5,6 +5,7 @@ using GestorEventosDeportivos.Shared.Domain.Common;
 using GestorEventosDeportivos.Modules.Carreras.Application.Services.DTOs;
 using GestorEventosDeportivos.Modules.ProgresoCarreras.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using GestorEventosDeportivos.Modules.Usuarios.Domain.Entities;
 
 namespace GestorEventosDeportivos.Modules.Carreras.Application.Services;
 
@@ -46,14 +47,59 @@ public class CarreraService : ICarreraService
 		return carrera;
 	}
 
-	public Task<bool> AgregarParticipante(Guid eventoId, Guid participanteId)
+	public async Task<bool> AgregarParticipante(Guid eventoId, Guid participanteId)
 	{
-		throw new NotImplementedException();
+		Carrera? carrera = await _db.Carreras.Include(c => c.Evento).FirstOrDefaultAsync(c => c.EventoId == eventoId);
+		if (carrera is null) throw new NotFoundException("Carrera no encontrada para el evento especificado");
+
+		Usuario? usuario = await _db.Usuarios.FindAsync(participanteId);
+		if (usuario is null) throw new NotFoundException("Usuario no encontrado");
+
+		Participacion? participacionExistente = await _db.Participaciones
+			.FirstOrDefaultAsync(p => p.EventoId == eventoId && p.ParticipanteId == participanteId);
+
+		if (participacionExistente != null) throw new DuplicateException("El participante ya está registrado en esta carrera");
+
+		Participacion participacion = new Participacion
+		{
+			EventoId = eventoId,
+			ParticipanteId = participanteId,
+			NumeroCorredor = 0,
+			Puesto = 0,
+			Estado = EstadoParticipanteEnCarrera.SinComenzar,
+			Progreso = new Dictionary<uint, TimeSpan> { }
+		};
+		await _db.Participaciones.AddAsync(participacion);
+
+		Participante? participante = usuario as Participante;
+		if (participante is null) throw new InvalidOperationException("El usuario no es un participante válido");
+
+		participante.Carreras.Add(participacion);
+		carrera.Participaciones.Add(participacion);
+
+		return await _db.SaveChangesAsync().ContinueWith(t => t.Result > 0);
 	}
 
-	public Task<bool> QuitarParticipante(Guid eventoId, Guid participanteId)
+	public async Task<bool> QuitarParticipante(Guid eventoId, Guid participanteId)
 	{
-		throw new NotImplementedException();
+		Carrera? carrera = await _db.Carreras.Include(c => c.Evento).FirstOrDefaultAsync(c => c.EventoId == eventoId);
+		if (carrera is null) throw new NotFoundException("Carrera no encontrada para el evento especificado");
+
+		Usuario? usuario = await _db.Usuarios.FindAsync(participanteId);
+		if (usuario is null) throw new NotFoundException("Usuario no encontrado");
+
+		Participante? participante = usuario as Participante;
+		if (participante is null) throw new InvalidOperationException("El usuario no es un participante válido");
+
+		Participacion? participacion = await _db.Participaciones
+			.FirstOrDefaultAsync(p => p.EventoId == eventoId && p.ParticipanteId == participanteId);
+		if (participacion is null) throw new NotFoundException("Participación no encontrada");
+
+		_db.Participaciones.Remove(participacion);
+		participante.Carreras.Remove(participacion);
+		carrera.Participaciones.Remove(participacion);
+
+		return await _db.SaveChangesAsync().ContinueWith(t => t.Result > 0);
 	}
 
 	public async Task<Evento?> HabilitarRegistro(Guid eventoId)

@@ -1,0 +1,126 @@
+@using GestorEventosDeportivos.Modules.Carreras.Application.Services
+@using System.Security.Claims
+@using System.Linq
+@using GestorEventosDeportivos.Modules.ProgresoCarreras.Domain.Entities
+@using GestorEventosDeportivos.Modules.Usuarios.Application.Services
+
+@inject ICarreraService CarreraService
+@inject IUsuarioServices UsuarioService
+@inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthStateProvider
+@inject SweetAlertService Swal;
+
+<div class="mb-3">
+        @if (cargando) {
+            <button class="btn btn-secondary" disabled>Cargando...</button>
+        } else if(_usuarioEstaInscripto) {
+            <button class="btn btn-danger" @onclick="DesinscribirUsuario">
+                Desinscribirme
+            </button>
+        } else {
+            <button class="btn btn-primary" @onclick="InscribirUsuario">
+                Inscribirme
+            </button>
+        }
+    </div>
+
+
+@code 
+{
+    [Parameter] public Guid EventoId { get; set; }
+    [Parameter] public Action? ReloadParent { get; set; }
+    private bool cargando = true;
+    private Guid _idUsuario = Guid.Empty;
+    private bool _usuarioEstaInscripto = false;
+    private List<Participacion> _participacionesUsuario = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _idUsuario = await ObtenerAutenticacion();
+        _usuarioEstaInscripto = await ObtenerEstadoInscripcionDeUsuario();
+        cargando = false;
+    }
+
+    private async Task<Guid> ObtenerAutenticacion() {
+        AuthenticationState? state = await AuthStateProvider.GetAuthenticationStateAsync();
+        ClaimsPrincipal? user = state.User;
+
+        string? idStr = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (Guid.TryParse(idStr, out var id)) {
+            return id;
+        }
+        return Guid.Empty;
+    }
+    private async Task<bool> ObtenerEstadoInscripcionDeUsuario() {
+        if (_idUsuario != Guid.Empty) {
+            _participacionesUsuario = (await UsuarioService.ObtenerParticipacionesDeUsuario(_idUsuario)).ToList();
+            Participacion? p = _participacionesUsuario.FirstOrDefault(p => p.EventoId.Equals(EventoId));
+            return (p is not null);
+        } else {
+            return false;
+        }
+    }
+
+    private async Task InscribirUsuario() {
+        if (_idUsuario == Guid.Empty) {
+            Nav.NavigateTo("/login");
+            return;
+        }
+
+
+        try {
+            cargando = true;
+            await CarreraService.AgregarParticipante(EventoId, _idUsuario);
+            AlertInscripcionExitosa("Actualización exitosa");
+        } catch(NotFoundException ex) {
+            AlertInscripcionFallida(ex.Message);
+        } catch(DuplicateException ex) {
+            AlertInscripcionFallida(ex.Message);
+        } catch (Exception) {
+            AlertInscripcionFallida("Ocurrió un error inesperado, intente de nuevo más tarde");
+        }
+        await Reload();
+        ReloadParent?.Invoke();
+    }
+
+    private async Task DesinscribirUsuario() {
+
+        try {
+            cargando = true;
+            await CarreraService.QuitarParticipante(EventoId, _idUsuario);
+            AlertInscripcionExitosa("Actualización exitosa");
+        } catch(NotFoundException ex) {
+            AlertInscripcionFallida(ex.Message);
+        } catch(Exception) {
+            AlertInscripcionFallida("Ocurrió un error inesperado, intente de nuevo más tarde");
+        }
+        
+        await Reload();
+        ReloadParent?.Invoke();
+    }
+
+    private async Task Reload() {
+        _usuarioEstaInscripto = await ObtenerEstadoInscripcionDeUsuario();
+        cargando = false;
+        StateHasChanged();
+    }
+
+    private async void AlertInscripcionFallida(string mensaje) {
+        await Swal.FireAsync(
+            "Error", 
+            mensaje, 
+            "error");
+    }
+
+    private async void AlertInscripcionExitosa(string mensaje) {
+        await Swal.FireAsync(new SweetAlertOptions
+        {
+            Toast = true,
+            Timer = 2000,
+            Position = "top-end",
+            Text = mensaje,
+            Icon = "success"
+        }
+        );
+    }
+}

@@ -3,11 +3,16 @@
 @using GestorEventosDeportivos.Modules.Carreras.Domain.Entities
 @using GestorEventosDeportivos.Modules.ProgresoCarreras.Domain.Entities
 @using GestorEventosDeportivos.Shared.Domain.Common
+@using System.Security.Claims
 
 @rendermode InteractiveServer
 
 @inject ICarreraService CarreraService
 @inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthStateProvider
+
+<script src="_content/CurrieTechnologies.Razor.SweetAlert2/sweetAlert2.min.js"></script> 
+
 
 <PageTitle>Detalles de la carrera</PageTitle>
 
@@ -34,6 +39,13 @@ else
     <h4 class="mt-4">Participantes inscriptos (@_totalElementos)</h4>
     <p>Hay @(Carrera?.Evento?.CantidadParticipantes - _totalElementos) cupos disponibles.</p>
 
+    
+    <GestorEventosDeportivos.Components.Pages.ChildComponents.BotonesInscripcionCarrera 
+        EventoId="@Carrera!.EventoId"
+        ReloadParent="@ForceReload"
+        />
+    
+
     <div class="table-responsive">
         <table class="table table-sm align-middle">
             <thead>
@@ -56,9 +68,9 @@ else
     </div>
 
     <div class="d-flex justify-content-between align-items-center mt-3">
-        <button class="btn btn-outline-secondary" @onclick="PaginaAnterior" disabled="@(_pagina <= 1)">Anterior</button>
+        <button class="btn btn-outline-info" @onclick="PaginaAnterior" disabled="@(_pagina <= 1)">Anterior</button>
         <span>Página @_pagina de @_totalPaginas (@_totalElementos elementos)</span>
-        <button class="btn btn-outline-secondary" @onclick="PaginaSiguiente" disabled="@(_pagina >= _totalPaginas)">Siguiente</button>
+        <button class="btn btn-outline-info" @onclick="PaginaSiguiente" disabled="@(_pagina >= _totalPaginas)">Siguiente</button>
     </div>
 
     <GestorEventosDeportivos.Components.Pages.ChildComponents.PuntosDeControlCarrera
@@ -77,11 +89,8 @@ else
     private string? error;
     private Carrera? Carrera;
     private List<Participacion> Participaciones = new();
-    private int row = 0;
-    private uint? _ultimaPosicionPc;
-    private HashSet<Guid> _expandidos = new();
     private int _pagina = 1;
-    private int _tamanoPagina = 5;
+    private int _tamanoPagina = 10;
     private int _totalPaginas = 1;
     private int _totalElementos = 0;
 
@@ -99,7 +108,6 @@ else
                 return;
             }
             Carrera = c;
-
             // Primera página de participantes
             await CargarPagina();
         }
@@ -119,7 +127,6 @@ else
         cargando = true;
         try
         {
-            row = 0;
             PagedResult<Participacion>? page = await CarreraService.ListarParticipacionesCarreraPaginado(Carrera.Id, _pagina, _tamanoPagina);
             Participaciones = page.Items.ToList();
             _totalElementos = page.TotalCount;
@@ -158,38 +165,10 @@ else
     {
         Nav.NavigateTo("/carreras");
     }
-
-    private string TiempoDeParticipante(Participacion p)
-    {
-        if (p.Progreso == null || p.Progreso.Count == 0)
-            return "--";
-
-        // Tiempo del ultimo punto de control de la carrera
-        if (_ultimaPosicionPc.HasValue && p.Progreso.TryGetValue(_ultimaPosicionPc.Value, out var tiempoFinalPc))
-        {
-            return FormatearTiempo(tiempoFinalPc);
-        }
-
-        // Tiempo del ultimo punto de control registrado
-        var maxTiempo = p.Progreso.Values.Max();
-        return FormatearTiempo(maxTiempo);
-    }
-
-    private static string FormatearTiempo(TimeSpan t)
-    {
-        if (t.TotalHours >= 1)
-            return $"{(int)t.TotalHours:00}:{t.Minutes:00}:{t.Seconds:00}";
-        return $"{t.Minutes:00}:{t.Seconds:00}";
-    }
-
-    private void ToggleExpand(Guid participacionId)
-    {
-        if (_expandidos.Contains(participacionId))
-            _expandidos.Remove(participacionId);
-        else
-            _expandidos.Add(participacionId);
-    }
-
     
-
+    private async void ForceReload()
+    {
+        await CargarPagina();
+    }
+    
 }
