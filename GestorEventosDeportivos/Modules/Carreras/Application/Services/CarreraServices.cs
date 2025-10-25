@@ -50,15 +50,24 @@ public class CarreraService : ICarreraService
 	public async Task<bool> AgregarParticipante(Guid eventoId, Guid participanteId)
 	{
 		Carrera? carrera = await _db.Carreras.Include(c => c.Evento).FirstOrDefaultAsync(c => c.EventoId == eventoId);
-		if (carrera is null) throw new NotFoundException("Carrera no encontrada para el evento especificado");
+		if (carrera is null) 
+			throw new NotFoundException("Carrera no encontrada para el evento especificado");
+
+		if (!carrera.Evento!.RegistroHabilitado) 
+			throw new DomainRuleException("El registro no está habilitado para esta carrera");
+
+		if (carrera.Participaciones.Count >= carrera.Evento.CantidadParticipantes) 
+			throw new DomainRuleException("No se pueden agregar más participantes a esta carrera");
 
 		Usuario? usuario = await _db.Usuarios.FindAsync(participanteId);
-		if (usuario is null) throw new NotFoundException("Usuario no encontrado");
+		if (usuario is null) 
+			throw new NotFoundException("Usuario no encontrado");
 
 		Participacion? participacionExistente = await _db.Participaciones
 			.FirstOrDefaultAsync(p => p.EventoId == eventoId && p.ParticipanteId == participanteId);
 
-		if (participacionExistente != null) throw new DuplicateException("El participante ya está registrado en esta carrera");
+		if (participacionExistente != null) 
+			throw new DuplicateException("El participante ya está registrado en esta carrera");
 
 		Participacion participacion = new Participacion
 		{
@@ -72,7 +81,8 @@ public class CarreraService : ICarreraService
 		await _db.Participaciones.AddAsync(participacion);
 
 		Participante? participante = usuario as Participante;
-		if (participante is null) throw new InvalidOperationException("El usuario no es un participante válido");
+		if (participante is null) 
+			throw new DomainRuleException("El usuario no es un participante válido");
 
 		participante.Carreras.Add(participacion);
 		carrera.Participaciones.Add(participacion);
@@ -89,7 +99,7 @@ public class CarreraService : ICarreraService
 		if (usuario is null) throw new NotFoundException("Usuario no encontrado");
 
 		Participante? participante = usuario as Participante;
-		if (participante is null) throw new InvalidOperationException("El usuario no es un participante válido");
+		if (participante is null) throw new DomainRuleException("El usuario no es un participante válido");
 
 		Participacion? participacion = await _db.Participaciones
 			.FirstOrDefaultAsync(p => p.EventoId == eventoId && p.ParticipanteId == participanteId);
@@ -105,7 +115,12 @@ public class CarreraService : ICarreraService
 	public async Task<Evento?> HabilitarRegistro(Guid eventoId)
 	{
 		var ev = await _db.Eventos.FindAsync(eventoId);
-		if (ev is null) return null;
+		if (ev is null) 
+			throw new NotFoundException("Evento no encontrado");
+
+		if (ev.EstadoEvento == EstadoEvento.Finalizado)
+			throw new DomainRuleException("No se puede habilitar el registro para un evento finalizado");
+
 		ev.RegistroHabilitado = true;
 		await _db.SaveChangesAsync();
 		return ev;
@@ -114,7 +129,9 @@ public class CarreraService : ICarreraService
 	public async Task<Evento?> DeshabilitarRegistro(Guid eventoId)
 	{
 		var ev = await _db.Eventos.FindAsync(eventoId);
-		if (ev is null) return null;
+		if (ev is null)
+			throw new NotFoundException("Evento no encontrado");
+			
 		ev.RegistroHabilitado = false;
 		await _db.SaveChangesAsync();
 		return ev;

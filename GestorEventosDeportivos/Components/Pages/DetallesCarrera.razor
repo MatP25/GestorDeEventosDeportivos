@@ -11,9 +11,6 @@
 @inject NavigationManager Nav
 @inject AuthenticationStateProvider AuthStateProvider
 
-<script src="_content/CurrieTechnologies.Razor.SweetAlert2/sweetAlert2.min.js"></script> 
-
-
 <PageTitle>Detalles de la carrera</PageTitle>
 
 <h1>Detalles de la carrera</h1>
@@ -41,9 +38,10 @@ else
 
     
     <GestorEventosDeportivos.Components.Pages.ChildComponents.BotonesInscripcionCarrera 
-        EventoId="@Carrera!.EventoId"
-        ReloadParent="@ForceReload"
-        />
+        IdEvento="@Carrera!.EventoId"
+        IdCarrera="@Carrera.Id"
+        ActualizarComponentePadre="@OnEventoDeInscripcion"
+    />
     
 
     <div class="table-responsive">
@@ -96,6 +94,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+
         try
         {
             cargando = true;
@@ -166,7 +165,7 @@ else
         Nav.NavigateTo("/carreras");
     }
     
-    private async void ForceReload()
+    private async void OnEventoDeInscripcion()
     {
         await CargarPagina();
     }

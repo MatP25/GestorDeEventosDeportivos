@@ -1,6 +1,8 @@
 @using GestorEventosDeportivos.Modules.Carreras.Application.Services
 @using System.Security.Claims
 @using System.Linq
+@using GestorEventosDeportivos.Modules.Carreras.Domain.Entities
+@using GestorEventosDeportivos.Modules.Carreras.Domain.Enums
 @using GestorEventosDeportivos.Modules.ProgresoCarreras.Domain.Entities
 @using GestorEventosDeportivos.Modules.Usuarios.Application.Services
 
@@ -10,40 +12,73 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject SweetAlertService Swal;
 
+<script src="_content/CurrieTechnologies.Razor.SweetAlert2/sweetAlert2.min.js"></script> 
+
 <div class="mb-3">
-        @if (cargando) {
-            <button class="btn btn-secondary" disabled>Cargando...</button>
-        } else if(_usuarioEstaInscripto) {
-            <button class="btn btn-danger" @onclick="DesinscribirUsuario">
-                Desinscribirme
+    @if (_usuarioEsAdmin) {
+        if (_estadoEvento != EstadoEvento.Finalizado && _estadoEvento != EstadoEvento.EnCurso) {
+            if (_registroHabilitado) {
+                <button class="btn btn-danger" @onclick="DeshabilitarInscripciones">
+                    Deshabilitar inscripciones
+                </button>
+            } else {
+                <button class="btn btn-primary" @onclick="HabilitarInscripciones">
+                    Habilitar inscripciones
+                </button>
+            }
+        }
+    } else {
+        if (!_registroHabilitado) {
+            <button class="btn btn-secondary" disabled>
+                Registro no habilitado
             </button>
         } else {
-            <button class="btn btn-primary" @onclick="InscribirUsuario">
-                Inscribirme
-            </button>
+            if (_cargando) {
+                <button class="btn btn-info" disabled>
+                    Cargando...
+                </button>
+            } else if(_usuarioEstaInscripto) {
+                <button class="btn btn-danger" @onclick="DesinscribirUsuario">
+                    Desinscribirme
+                </button>
+            } else {
+                <button class="btn btn-primary" @onclick="InscribirUsuario">
+                    Inscribirme
+                </button>
+            }
         }
-    </div>
+    }
+
+</div>
 
 
 @code 
 {
-    [Parameter] public Guid EventoId { get; set; }
-    [Parameter] public Action? ReloadParent { get; set; }
-    private bool cargando = true;
+    [Parameter] public Guid IdEvento { get; set; }
+    [Parameter] public Guid IdCarrera { get; set; }
+    [Parameter] public Action? ActualizarComponentePadre { get; set; }
+    private bool _cargando = true;
+    public bool _registroHabilitado = false;
+    public EstadoEvento? _estadoEvento;
     private Guid _idUsuario = Guid.Empty;
     private bool _usuarioEstaInscripto = false;
     private List<Participacion> _participacionesUsuario = new();
+    private bool _usuarioEsAdmin;
 
     protected override async Task OnInitializedAsync()
     {
         _idUsuario = await ObtenerAutenticacion();
         _usuarioEstaInscripto = await ObtenerEstadoInscripcionDeUsuario();
-        cargando = false;
+        await ObtenerEstadoCarrera();
+
+        _cargando = false;
     }
 
     private async Task<Guid> ObtenerAutenticacion() {
         AuthenticationState? state = await AuthStateProvider.GetAuthenticationStateAsync();
         ClaimsPrincipal? user = state.User;
+
+        _usuarioEsAdmin = user.IsInRole("Admin");
 
         string? idStr = user.FindFirstValue(ClaimTypes.NameIdentifier);
         if (Guid.TryParse(idStr, out var id)) {
@@ -51,10 +86,21 @@
         }
         return Guid.Empty;
     }
+
+    private async Task ObtenerEstadoCarrera() {
+        Carrera? carrera = await CarreraService.ObtenerCarreraConDetalle(IdCarrera);
+        if (carrera is not null) {
+            _registroHabilitado = carrera.Evento!.RegistroHabilitado;
+            _estadoEvento = carrera.Evento!.EstadoEvento;
+            return;
+        }
+        _registroHabilitado = false;
+    }
+
     private async Task<bool> ObtenerEstadoInscripcionDeUsuario() {
         if (_idUsuario != Guid.Empty) {
             _participacionesUsuario = (await UsuarioService.ObtenerParticipacionesDeUsuario(_idUsuario)).ToList();
-            Participacion? p = _participacionesUsuario.FirstOrDefault(p => p.EventoId.Equals(EventoId));
+            Participacion? p = _participacionesUsuario.FirstOrDefault(p => p.EventoId.Equals(IdEvento));
             return (p is not null);
         } else {
             return false;
@@ -67,52 +113,83 @@
             return;
         }
 
-
         try {
-            cargando = true;
-            await CarreraService.AgregarParticipante(EventoId, _idUsuario);
-            AlertInscripcionExitosa("Actualización exitosa");
+            _cargando = true;
+            await CarreraService.AgregarParticipante(IdEvento, _idUsuario);
+            AlertActualizacionExitosa("Actualización exitosa");
         } catch(NotFoundException ex) {
-            AlertInscripcionFallida(ex.Message);
+            AlertActualizacionFallida(ex.Message);
         } catch(DuplicateException ex) {
-            AlertInscripcionFallida(ex.Message);
+            AlertActualizacionFallida(ex.Message);
+        } catch(DomainRuleException ex) {
+            AlertActualizacionFallida(ex.Message);
         } catch (Exception) {
-            AlertInscripcionFallida("Ocurrió un error inesperado, intente de nuevo más tarde");
+            AlertActualizacionFallida("Ocurrió un error inesperado, intente de nuevo más tarde");
         }
-        await Reload();
-        ReloadParent?.Invoke();
+        await ActualizarComponente();
+        ActualizarComponentePadre?.Invoke();
     }
 
     private async Task DesinscribirUsuario() {
 
         try {
-            cargando = true;
-            await CarreraService.QuitarParticipante(EventoId, _idUsuario);
-            AlertInscripcionExitosa("Actualización exitosa");
+            _cargando = true;
+            await CarreraService.QuitarParticipante(IdEvento, _idUsuario);
+            AlertActualizacionExitosa("Actualización exitosa");
         } catch(NotFoundException ex) {
-            AlertInscripcionFallida(ex.Message);
+            AlertActualizacionFallida(ex.Message);
+        } catch(DomainRuleException ex) {
+            AlertActualizacionFallida(ex.Message);   
         } catch(Exception) {
-            AlertInscripcionFallida("Ocurrió un error inesperado, intente de nuevo más tarde");
+            AlertActualizacionFallida("Ocurrió un error inesperado, intente de nuevo más tarde");
         }
         
-        await Reload();
-        ReloadParent?.Invoke();
+        await ActualizarComponente();
+        ActualizarComponentePadre?.Invoke();
     }
 
-    private async Task Reload() {
-        _usuarioEstaInscripto = await ObtenerEstadoInscripcionDeUsuario();
-        cargando = false;
+    private async Task HabilitarInscripciones() {
+        try {
+            await CarreraService.HabilitarRegistro(IdEvento);
+            await ObtenerEstadoCarrera();
+            AlertActualizacionExitosa("Actualización exitosa");
+        } catch(NotFoundException ex) {
+            AlertActualizacionFallida(ex.Message);   
+        } catch (DomainRuleException ex) {
+            AlertActualizacionFallida(ex.Message);
+        } catch(Exception) {
+            AlertActualizacionFallida("Ocurrió un error inesperado, intente de nuevo más tarde");
+        }
         StateHasChanged();
     }
 
-    private async void AlertInscripcionFallida(string mensaje) {
+    private async Task DeshabilitarInscripciones() {
+        try {
+            await CarreraService.DeshabilitarRegistro(IdEvento);
+            await ObtenerEstadoCarrera();
+            AlertActualizacionExitosa("Actualización exitosa");
+        } catch(NotFoundException ex) {
+            AlertActualizacionFallida(ex.Message);   
+        } catch(Exception) {
+            AlertActualizacionFallida("Ocurrió un error inesperado, intente de nuevo más tarde");
+        }
+        StateHasChanged();
+    }
+
+    private async Task ActualizarComponente() {
+        _usuarioEstaInscripto = await ObtenerEstadoInscripcionDeUsuario();
+        _cargando = false;
+        StateHasChanged();
+    }
+
+    private async void AlertActualizacionFallida(string mensaje) {
         await Swal.FireAsync(
             "Error", 
             mensaje, 
             "error");
     }
 
-    private async void AlertInscripcionExitosa(string mensaje) {
+    private async void AlertActualizacionExitosa(string mensaje) {
         await Swal.FireAsync(new SweetAlertOptions
         {
             Toast = true,
