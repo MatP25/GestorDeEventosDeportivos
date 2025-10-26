@@ -1,0 +1,43 @@
+@using GestorEventosDeportivos.Modules.Carreras.Domain.Entities
+@using GestorEventosDeportivos.Modules.Carreras.Domain.Enums
+
+@code
+{
+    [Parameter]
+    public Carrera? Carrera { get; set; }
+
+    private string GetBadgeClass(EstadoEvento estado)
+	{
+		return estado switch
+		{
+			EstadoEvento.SinComenzar => "text-bg-info",
+			EstadoEvento.EnCurso => "text-bg-warning",
+			EstadoEvento.Finalizado => "text-bg-secondary",
+			_ => "text-bg-light"
+		};
+	}
+}
+
+<div class="card mb-3">
+    <div class="card-body">
+    
+        <h5 class="card-title">@Carrera!.Evento!.Nombre (@Carrera.Longitud m)</h5>
+        <p class="card-text mb-1">
+            <b>Ubicación:</b> @Carrera.Evento!.Ubicacion
+        </p>
+        <p class="card-text mb-1">
+            <b>Fecha:</b> @Carrera.Evento!.FechaInicio.ToString("dd/MM/yyyy HH:mm")
+        </p>
+        <p class="card-text mb-1">
+            <b>Capacidad: </b> @Carrera.Evento!.CantidadParticipantes
+        </p>
+        <p class="card-text">
+            <b>Estado:</b> <span class="badge @GetBadgeClass(Carrera.Evento!.EstadoEvento)">@Carrera.Evento!.EstadoEvento</span>
+            @if (!string.IsNullOrWhiteSpace(Carrera.Ganador))
+            {
+                <span class="ms-2">· <b>Ganador:</b> @Carrera.Ganador (@(Carrera.TiempoGanador?.ToString() ?? "--"))</span>
+            }
+        </p>
+    </div>
+</div>
+

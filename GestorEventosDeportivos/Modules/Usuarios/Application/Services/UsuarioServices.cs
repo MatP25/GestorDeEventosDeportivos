@@ -69,6 +69,7 @@ public class UsuarioServices : IUsuarioServices
         IEnumerable<Participacion> participaciones = await _context.Participaciones
             .Include(p => p.Evento)
             .Where(p => p.ParticipanteId == usuarioId)
+            .AsNoTracking()
             .ToListAsync();
 
         return participaciones;

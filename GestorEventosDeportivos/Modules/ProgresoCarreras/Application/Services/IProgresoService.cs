@@ -8,4 +8,5 @@ public interface IProgresoService
     Task<Participacion> VerProgresoDeParticipanteEnCarrera(Guid carreraId, Guid participanteId);
     Task<ProgresoCarreraDTO> VerProgresoGeneralDeCarrera(Guid carreraId);
     Task IngresarLecturaPuntoDeControl(Guid carreraId, Guid participanteId, uint puntoDeControlPosicion, TimeSpan tiempo);
+    Task AbandonarCarrera(Guid carreraId,  Guid participanteId);
 }

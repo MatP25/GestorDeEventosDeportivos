@@ -19,13 +19,21 @@ public class InitData
                 throw new InvalidOperationException("No se pudo obtener el contexto de la base de datos.");
             }
 
-            EntityEntry<Evento> evento1, evento2, evento3, evento4;
-            EntityEntry<Carrera> carrera1, carrera2, carrera3, carrera4;
-            EntityEntry<Participante> participante1, participante2, participante3;
+            EntityEntry<Evento> evento1, evento2, evento3, evento4, evento5;
+            EntityEntry<Carrera> carrera1, carrera2, carrera3, carrera4, carrera5;
+            EntityEntry<Participante> 
+                participante1, participante2, participante3,
+                participante4, participante5, participante6,
+                participante7, participante8, participante9,
+                participante10, participante11, participante12;
             EntityEntry<Participacion> participacion1carrera1, participacion2carrera1, participacion3carrera1,
                 participacion1carrera2, participacion2carrera2, participacion3carrera2,
                 participacion1carrera3, participacion2carrera3, participacion3carrera3,
-                participacion1carrera4, participacion2carrera4, participacion3carrera4;
+                participacion1carrera4, participacion2carrera4, participacion3carrera4,
+                participacion1carrera5, participacion2carrera5, participacion3carrera5,
+                participacion4carrera5, participacion5carrera5, participacion6carrera5,
+                participacion7carrera5, participacion8carrera5, participacion9carrera5,
+                participacion10carrera5, participacion11carrera5, participacion12carrera5;
 
             Console.WriteLine("Verificando si es necesario insertar datos de prueba...");
 
@@ -86,6 +94,16 @@ public class InitData
                     CantidadParticipantes = 10
                 });
 
+                evento5 = context.Eventos.Add(new()
+                {
+                    Nombre = "Maratón 5",
+                    FechaInicio = DateTime.Now.AddMonths(2),
+                    Ubicacion = "Colonia",
+                    RegistroHabilitado = true,
+                    EstadoEvento = EstadoEvento.SinComenzar,
+                    CantidadParticipantes = 20
+                });
+
                 carrera1 = context.Carreras.Add(new()
                 {
                     EventoId = evento1.Entity.Id,
@@ -138,6 +156,18 @@ public class InitData
                     }
                 });
 
+                carrera5 = context.Carreras.Add(new()
+                {
+                    EventoId = evento5.Entity.Id,
+                    Longitud = 15000,
+                    PuntosDeControl = new List<PuntoDeControl>
+                    {
+                        new PuntoDeControl { Posicion = 1, Ubicacion = "Punto 1 - Km 5" },
+                        new PuntoDeControl { Posicion = 2, Ubicacion = "Punto 2 - Km 10" },
+                        new PuntoDeControl { Posicion = 3, Ubicacion = "Punto 3 - Km 15" }
+                    }
+                });
+
                 participante1 = context.Participantes.Add(new()
                 {
                     Nombre = "Usuario",
@@ -164,6 +194,85 @@ public class InitData
                     Password = "1234",
                     FechaNac = new DateOnly(1992, 9, 9)
                 });
+
+                participante4 = context.Participantes.Add(new()
+                {
+                    Nombre = "Usuario",
+                    Apellido = "Cuatro",
+                    Email = "usuario4@email.com",
+                    Password = "1234",
+                    FechaNac = new DateOnly(1992, 2, 3)
+                });
+                
+                participante5 = context.Participantes.Add(new()
+                {
+                    Nombre = "Usuario",
+                    Apellido = "Cinco",
+                    Email = "usuario5@email.com",
+                    Password = "1234",
+                    FechaNac = new DateOnly(1980, 12, 10)
+                });
+
+                participante6 = context.Participantes.Add(new()
+                {
+                    Nombre = "Usuario",
+                    Apellido = "Seis",
+                    Email = "usuario6@email.com",
+                    Password = "1234",
+                    FechaNac = new DateOnly(1990, 1, 1)
+                });
+                participante7 = context.Participantes.Add(new()
+                {
+                    Nombre = "Usuario",
+                    Apellido = "Siete",
+                    Email = "usuario7@email.com",
+                    Password = "1234",
+                    FechaNac = new DateOnly(1985, 5, 5)
+                });
+
+                participante8 = context.Participantes.Add(new()
+                {
+                    Nombre = "Usuario",
+                    Apellido = "Ocho",
+                    Email = "usuario8@email.com",
+                    Password = "1234",
+                    FechaNac = new DateOnly(1982, 8, 8)
+                });
+                participante9 = context.Participantes.Add(new()
+                {
+                    Nombre = "Usuario",
+                    Apellido = "Nueve",
+                    Email = "usuario9@email.com",
+                    Password = "1234",
+                    FechaNac = new DateOnly(1995, 5, 5)
+                });
+
+                participante10 = context.Participantes.Add(new()
+                {
+                    Nombre = "Usuario",
+                    Apellido = "Diez",
+                    Email = "usuario10@email.com",
+                    Password = "1234",
+                    FechaNac = new DateOnly(1990, 10, 10)
+                });
+
+                participante11 = context.Participantes.Add(new()
+                {
+                    Nombre = "Usuario",
+                    Apellido = "Once",
+                    Email = "usuario11@email.com",
+                    Password = "1234",
+                    FechaNac = new DateOnly(1995, 5, 5)
+                });
+                participante12 = context.Participantes.Add(new()
+                {
+                    Nombre = "Usuario",
+                    Apellido = "Doce",
+                    Email = "usuario12@email.com",
+                    Password = "1234",
+                    FechaNac = new DateOnly(1998, 12, 12)
+                });
+
 
                 participacion1carrera1 = context.Participaciones.Add(
                 new Participacion
@@ -326,12 +435,146 @@ public class InitData
                         Progreso = new Dictionary<uint, TimeSpan> { }
                     });
 
+                // Participaciones para carrera5 (sin comenzar)
+                participacion1carrera5 = context.Participaciones.Add(
+                    new Participacion
+                    {
+                        EventoId = carrera5.Entity.EventoId,
+                        ParticipanteId = participante1.Entity.Id,
+                        NumeroCorredor = 0,
+                        Puesto = 0,
+                        Estado = EstadoParticipanteEnCarrera.SinComenzar,
+                        Progreso = new Dictionary<uint, TimeSpan> { }
+                    });
+                
+                participacion2carrera5 = context.Participaciones.Add(
+                    new Participacion
+                    {
+                        EventoId = carrera5.Entity.EventoId,
+                        ParticipanteId = participante2.Entity.Id,
+                        NumeroCorredor = 0,
+                        Puesto = 0,
+                        Estado = EstadoParticipanteEnCarrera.EnCurso,
+                        Progreso = new Dictionary<uint, TimeSpan> { }
+                    });
+
+                participacion3carrera5 = context.Participaciones.Add(
+                    new Participacion
+                    {
+                        EventoId = carrera5.Entity.EventoId,
+                        ParticipanteId = participante3.Entity.Id,
+                        NumeroCorredor = 0,
+                        Puesto = 0,
+                        Estado = EstadoParticipanteEnCarrera.SinComenzar,
+                        Progreso = new Dictionary<uint, TimeSpan> { }
+                    });
+
+                participacion4carrera5 = context.Participaciones.Add(
+                    new Participacion
+                    {
+                        EventoId = carrera5.Entity.EventoId,
+                        ParticipanteId = participante4.Entity.Id,
+                        NumeroCorredor = 0,
+                        Puesto = 0,
+                        Estado = EstadoParticipanteEnCarrera.SinComenzar,
+                        Progreso = new Dictionary<uint, TimeSpan> { }
+                    });
+
+                participacion5carrera5 = context.Participaciones.Add(
+                    new Participacion
+                    {
+                        EventoId = carrera5.Entity.EventoId,
+                        ParticipanteId = participante5.Entity.Id,
+                        NumeroCorredor = 0,
+                        Puesto = 0,
+                        Estado = EstadoParticipanteEnCarrera.SinComenzar,
+                        Progreso = new Dictionary<uint, TimeSpan> { }
+                    });
+
+                participacion6carrera5 = context.Participaciones.Add(
+                    new Participacion
+                    {
+                        EventoId = carrera5.Entity.EventoId,
+                        ParticipanteId = participante6.Entity.Id,
+                        NumeroCorredor = 0,
+                        Puesto = 0,
+                        Estado = EstadoParticipanteEnCarrera.SinComenzar,
+                        Progreso = new Dictionary<uint, TimeSpan> { }
+                    });
+
+                participacion7carrera5 = context.Participaciones.Add(
+                    new Participacion
+                    {
+                        EventoId = carrera5.Entity.EventoId,
+                        ParticipanteId = participante7.Entity.Id,
+                        NumeroCorredor = 0,
+                        Puesto = 0,
+                        Estado = EstadoParticipanteEnCarrera.SinComenzar,
+                        Progreso = new Dictionary<uint, TimeSpan> { }
+                    });
+
+                participacion8carrera5 = context.Participaciones.Add(
+                    new Participacion
+                    {
+                        EventoId = carrera5.Entity.EventoId,
+                        ParticipanteId = participante8.Entity.Id,
+                        NumeroCorredor = 0,
+                        Puesto = 0,
+                        Estado = EstadoParticipanteEnCarrera.SinComenzar,
+                        Progreso = new Dictionary<uint, TimeSpan> { }
+                    });
+
+                participacion9carrera5 = context.Participaciones.Add(
+                    new Participacion
+                    {
+                        EventoId = carrera5.Entity.EventoId,
+                        ParticipanteId = participante9.Entity.Id,
+                        NumeroCorredor = 0,
+                        Puesto = 0,
+                        Estado = EstadoParticipanteEnCarrera.SinComenzar,
+                        Progreso = new Dictionary<uint, TimeSpan> { }
+                    });
+
+                participacion10carrera5 = context.Participaciones.Add(
+                    new Participacion
+                    {
+                        EventoId = carrera5.Entity.EventoId,
+                        ParticipanteId = participante10.Entity.Id,
+                        NumeroCorredor = 0,
+                        Puesto = 0,
+                        Estado = EstadoParticipanteEnCarrera.SinComenzar,
+                        Progreso = new Dictionary<uint, TimeSpan> { }
+                    });
+
+                participacion11carrera5 = context.Participaciones.Add(
+                    new Participacion
+                    {
+                        EventoId = carrera5.Entity.EventoId,
+                        ParticipanteId = participante11.Entity.Id,
+                        NumeroCorredor = 0,
+                        Puesto = 0,
+                        Estado = EstadoParticipanteEnCarrera.SinComenzar,
+                        Progreso = new Dictionary<uint, TimeSpan> { }
+                    });
+                    
+                participacion12carrera5 = context.Participaciones.Add(
+                    new Participacion
+                    {
+                        EventoId = carrera5.Entity.EventoId,
+                        ParticipanteId = participante12.Entity.Id,
+                        NumeroCorredor = 0,
+                        Puesto = 0,
+                        Estado = EstadoParticipanteEnCarrera.SinComenzar,
+                        Progreso = new Dictionary<uint, TimeSpan> { }
+                    });
+
                 participante1.Entity.Carreras.AddRange(new[]
                 {
                     participacion1carrera1.Entity,
                     participacion1carrera2.Entity,
                     participacion1carrera3.Entity,
-                    participacion1carrera4.Entity
+                    participacion1carrera4.Entity,
+                    participacion1carrera5.Entity
                 });
 
                 participante2.Entity.Carreras.AddRange(new[]
@@ -339,7 +582,8 @@ public class InitData
                     participacion2carrera1.Entity,
                     participacion2carrera2.Entity,
                     participacion2carrera3.Entity,
-                    participacion2carrera4.Entity
+                    participacion2carrera4.Entity,
+                    participacion2carrera5.Entity
                 });
 
                 participante3.Entity.Carreras.AddRange(new[]
@@ -347,14 +591,25 @@ public class InitData
                     participacion3carrera1.Entity,
                     participacion3carrera2.Entity,
                     participacion3carrera3.Entity,
-                    participacion3carrera4.Entity
+                    participacion3carrera4.Entity,
+                    participacion3carrera5.Entity
                 });
+
+                participante4.Entity.Carreras.Add(participacion4carrera5.Entity);
+                participante5.Entity.Carreras.Add(participacion5carrera5.Entity);
+                participante6.Entity.Carreras.Add(participacion6carrera5.Entity);
+                participante7.Entity.Carreras.Add(participacion7carrera5.Entity);
+                participante8.Entity.Carreras.Add(participacion8carrera5.Entity);
+                participante9.Entity.Carreras.Add(participacion9carrera5.Entity);
+                participante10.Entity.Carreras.Add(participacion10carrera5.Entity);
+                participante11.Entity.Carreras.Add(participacion11carrera5.Entity);
+                participante12.Entity.Carreras.Add(participacion12carrera5.Entity);
 
                 carrera1.Entity.Participaciones.AddRange(new[]
                 {
                     participacion1carrera1.Entity,
                     participacion2carrera1.Entity,
-                    participacion3carrera1.Entity
+                    participacion3carrera1.Entity,
                 });
                 carrera2.Entity.Participaciones.AddRange(new[]
                 {
@@ -373,6 +628,21 @@ public class InitData
                     participacion1carrera4.Entity,
                     participacion2carrera4.Entity,
                     participacion3carrera4.Entity
+                });
+                carrera5.Entity.Participaciones.AddRange(new[]
+                {
+                    participacion1carrera5.Entity,
+                    participacion2carrera5.Entity,
+                    participacion3carrera5.Entity,
+                    participacion4carrera5.Entity,
+                    participacion5carrera5.Entity,
+                    participacion6carrera5.Entity,
+                    participacion7carrera5.Entity,
+                    participacion8carrera5.Entity,
+                    participacion9carrera5.Entity,
+                    participacion10carrera5.Entity,
+                    participacion11carrera5.Entity,
+                    participacion12carrera5.Entity
                 });
             }
 

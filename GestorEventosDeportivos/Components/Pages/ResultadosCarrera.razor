@@ -28,24 +28,9 @@ else if (Carrera is null)
 }
 else
 {
-    <div class="card mb-3">
-        <div class="card-body">
-            <h5 class="card-title">@Carrera.Evento!.Nombre (@Carrera.Longitud m)</h5>
-            <p class="card-text mb-1">
-                <b>Ubicación:</b> @Carrera.Evento!.Ubicacion
-            </p>
-            <p class="card-text mb-1">
-                <b>Fecha:</b> @Carrera.Evento!.FechaInicio.ToString("dd/MM/yyyy HH:mm")
-            </p>
-            <p class="card-text">
-                <b>Estado:</b> <span class="badge @GetBadgeClass(Carrera.Evento!.EstadoEvento)">@Carrera.Evento!.EstadoEvento</span>
-                @if (!string.IsNullOrWhiteSpace(Carrera.Ganador))
-                {
-                    <span class="ms-2">· <b>Ganador:</b> @Carrera.Ganador (@(Carrera.TiempoGanador?.ToString() ?? "--"))</span>
-                }
-            </p>
-        </div>
-    </div>
+    <GestorEventosDeportivos.Components.Pages.ChildComponents.EncabezadoDetallesCarrera 
+        Carrera="@Carrera"
+    />
 
     <h4 class="mt-4">Participantes (@_totalElementos)</h4>
     @if (Participaciones.Count == 0)
@@ -126,15 +111,10 @@ else
             <button class="btn btn-outline-secondary" @onclick="PaginaSiguiente" disabled="@(_pagina >= _totalPaginas)">Siguiente</button>
         </div>
 
-    <h5 class="mt-4">Puntos de control (@(Carrera?.PuntosDeControl?.Count ?? 0))</h5>
-        <ul class="list-group mb-3">
-            @foreach (var pc in (Carrera?.PuntosDeControl ?? new List<PuntoDeControl>()).OrderBy(pc => pc.Posicion))
-            {
-                <li class="list-group-item d-flex justify-content-between">
-                    <span>Posición @pc.Posicion — @pc.Ubicacion</span>
-                </li>
-            }
-        </ul>
+    <GestorEventosDeportivos.Components.Pages.ChildComponents.PuntosDeControlCarrera
+        Carrera="@Carrera"
+    />
+    
     }
 
     <button class="btn btn-outline-secondary" @onclick="Volver">Volver</button>
@@ -261,17 +241,6 @@ else
             _expandidos.Remove(participacionId);
         else
             _expandidos.Add(participacionId);
-    }
-
-    private string GetBadgeClass(EstadoEvento estado)
-    {
-        return estado switch
-        {
-            EstadoEvento.SinComenzar => "text-bg-info",
-            EstadoEvento.EnCurso => "text-bg-warning",
-            EstadoEvento.Finalizado => "text-bg-secondary",
-            _ => "text-bg-light"
-        };
     }
 
     private string GetEstadoPartBadge(EstadoParticipanteEnCarrera est)

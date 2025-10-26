@@ -80,7 +80,7 @@ public class ProgresoServices : IProgresoService
     public async Task IngresarLecturaPuntoDeControl(Guid carreraId, Guid participanteId, uint puntoDeControlPosicion, TimeSpan tiempo)
     {
         Participacion? participacion = await _context.Participaciones.FirstOrDefaultAsync(p => p.EventoId == carreraId && p.ParticipanteId == participanteId);
-        if (participacion == null) 
+        if (participacion == null)
             throw new NotFoundException($"No se encontró la participación del usuario de Id {participanteId} en la carrera {carreraId}.");
 
         // Registrar progreso en el punto indicado (si ya existe, actualiza el tiempo)
@@ -116,5 +116,27 @@ public class ProgresoServices : IProgresoService
 
         // Recalcular estado del evento tras el cambio de estado del participante
         await _carreraService.RecalcularEstadoEvento(carreraId);
+    }
+    
+    public async Task AbandonarCarrera(Guid carreraId,  Guid participanteId)
+    {
+        Carrera? carrera = await _context.Carreras
+            .Include(c => c.Evento)
+            .Include(c => c.Participaciones)
+            .FirstOrDefaultAsync(c => c.Id == carreraId);
+
+        if (carrera == null)
+            throw new NotFoundException($"No se encontró la carrera con Id {carreraId}.");
+
+        Participacion? participacion = carrera.Participaciones.FirstOrDefault(p => p.ParticipanteId == participanteId);
+        if (participacion == null)
+            throw new NotFoundException($"No se encontró la participación del usuario con Id {participanteId} en la carrera {carreraId}.");
+
+        if (carrera.Evento!.EstadoEvento == EstadoEvento.Finalizado 
+            || carrera.Evento!.EstadoEvento == EstadoEvento.SinComenzar)
+            throw new DomainRuleException("No se puede abandonar una carrera que ya ha finalizado o que no ha comenzado.");
+
+        participacion.Estado = EstadoParticipanteEnCarrera.Abandonada;
+        await _context.SaveChangesAsync();
     }
 }
