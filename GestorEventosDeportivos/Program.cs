@@ -10,6 +10,10 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 using System.Security.Claims;
 using GestorEventosDeportivos.Modules.Usuarios.Domain.Entities;
+using GestorEventosDeportivos.Hubs;
+using GestorEventosDeportivos.Modules.EmailVerification.Application;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +24,9 @@ builder.Services.AddRazorComponents()
 builder.Services.AddTransient<IUsuarioServices, UsuarioServices>();
 builder.Services.AddTransient<IProgresoService , ProgresoServices>();
 builder.Services.AddTransient<ICarreraService , CarreraService>();
+// Verificación de email (demo/simple)
+builder.Services.AddSingleton<IEmailService, FakeEmailService>();
+builder.Services.AddSingleton<VerificationUserService>();
 // Removed in-memory admin demo service; administration now uses real services and the DB.
 
 // HttpContext y HttpClient
@@ -47,11 +54,14 @@ builder.Services.AddAuthorization(options =>
 });
 
 // Generador automaticos de lecturas (solo si esta habilitado)
-var generadorHabilitado = builder.Configuration.GetValue<bool>("GeneradorLecturas:Habilitado", true);
+var generadorHabilitado = builder.Configuration.GetValue<bool>("GeneradorLecturas:Habilitado", false);
 if (generadorHabilitado)
 {
     builder.Services.AddHostedService<GeneradorAutomaticoLecturas>();
 }
+
+// SignalR
+builder.Services.AddSignalR();
 
 //DB Context
 var conn = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -90,6 +100,73 @@ app.MapRazorComponents<App>()
 // Mapear endpoints de API
 app.MapGenerarLecturaProgresoEndpoints();
 app.MapControlGeneradorEndpoints();
+
+// Hub de verificación
+app.MapHub<VerificationHub>("/hubs/verification");
+
+// Endpoint de verificación vía token
+app.MapGet("/verify", async ([FromQuery] Guid token, HttpContext http, VerificationUserService userSvc, IHubContext<VerificationHub> hub) =>
+{
+    if (token == Guid.Empty)
+    {
+        return Results.BadRequest("Token inválido");
+    }
+
+    var (valid, userId) = await userSvc.ValidateTokenAsync(token);
+    if (!valid)
+    {
+        return Results.BadRequest("Token inválido o expirado");
+    }
+
+    await userSvc.SignInWithVerifiedClaimAsync(userId, http);
+    await hub.Clients.Group(userId.ToString()).SendAsync("EmailVerified");
+    return Results.Redirect("/verify-success");
+});
+
+// Endpoint de verificación automática (simula click en email). Dev-only / demo
+app.MapGet("/verify/auto", async ([FromQuery] Guid userId, HttpContext http, VerificationUserService userSvc, AppDbContext db, IHubContext<VerificationHub> hub) =>
+{
+    if (userId == Guid.Empty)
+    {
+        return Results.BadRequest("UserId inválido");
+    }
+
+    var verUser = await userSvc.GetUserAsync(userId);
+    if (verUser is null)
+    {
+        return Results.BadRequest("Usuario no encontrado");
+    }
+
+    var consumed = await userSvc.ConsumeTokenForUserAsync(userId);
+    if (!consumed)
+    {
+        return Results.BadRequest("Token inválido o expirado");
+    }
+
+    // Buscar el usuario real de la BD por email para iniciar sesión con sus claims
+    var usuario = await db.Usuarios.FirstOrDefaultAsync(u => u.Email == verUser.Email);
+    if (usuario is null)
+    {
+        return Results.BadRequest("Usuario de la aplicación no encontrado");
+    }
+
+    var claims = new List<Claim>
+    {
+        new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
+        new Claim(ClaimTypes.Name, $"{usuario.Nombre} {usuario.Apellido}".Trim()),
+        new Claim(ClaimTypes.Email, usuario.Email),
+        new Claim("EmailVerified", "true")
+    };
+    var role = usuario is Administrador ? "Admin" : "Participante";
+    claims.Add(new Claim(ClaimTypes.Role, role));
+
+    var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+    var principal = new ClaimsPrincipal(identity);
+    await http.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+
+    await hub.Clients.Group(userId.ToString()).SendAsync("EmailVerified");
+    return Results.Redirect("/");
+});
 
 // Endpoints de autenticación (cookies)
 app.MapPost("/auth/login", async (HttpContext http, AppDbContext db) =>
