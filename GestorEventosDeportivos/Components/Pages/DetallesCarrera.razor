@@ -34,15 +34,15 @@ else
     />
 
     <h4 class="mt-4">Participantes inscriptos (@_totalElementos)</h4>
-    <p>Hay @(Carrera?.Evento?.CantidadParticipantes - _totalElementos) cupos disponibles.</p>
-
+    @if (_registroHabilitado) {
+        <p>Hay @(Carrera?.Evento?.CantidadParticipantes - _totalElementos) cupos disponibles.</p>
+    }
     
     <GestorEventosDeportivos.Components.Pages.ChildComponents.BotonesInscripcionCarrera 
         IdEvento="@Carrera!.EventoId"
         IdCarrera="@Carrera.Id"
         ActualizarComponentePadre="@OnEventoDeInscripcion"
     />
-    
 
     <div class="table-responsive">
         <table class="table table-sm align-middle">
@@ -91,10 +91,10 @@ else
     private int _tamanoPagina = 10;
     private int _totalPaginas = 1;
     private int _totalElementos = 0;
+    private bool _registroHabilitado;
 
     protected override async Task OnInitializedAsync()
     {
-
         try
         {
             cargando = true;
@@ -107,6 +107,7 @@ else
                 return;
             }
             Carrera = c;
+            _registroHabilitado = c.Evento!.RegistroHabilitado;
             // Primera página de participantes
             await CargarPagina();
         }

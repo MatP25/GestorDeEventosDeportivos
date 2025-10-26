@@ -49,14 +49,21 @@ public class CarreraService : ICarreraService
 
 	public async Task<bool> AgregarParticipante(Guid eventoId, Guid participanteId)
 	{
-		Carrera? carrera = await _db.Carreras.Include(c => c.Evento).FirstOrDefaultAsync(c => c.EventoId == eventoId);
+		Carrera? carrera = await _db.Carreras
+			.Include(c => c.Evento)
+			.Include(c => c.Participaciones)
+			.FirstOrDefaultAsync(c => c.EventoId == eventoId);
 		if (carrera is null) 
 			throw new NotFoundException("Carrera no encontrada para el evento especificado");
 
-		if (!carrera.Evento!.RegistroHabilitado) 
+		await _db.Entry(carrera).ReloadAsync();
+		await _db.Entry(carrera.Evento!).ReloadAsync();
+
+		if (!carrera.Evento!.RegistroHabilitado)
 			throw new DomainRuleException("El registro no está habilitado para esta carrera");
 
-		if (carrera.Participaciones.Count >= carrera.Evento.CantidadParticipantes) 
+
+		if (carrera.Participaciones.Count >= carrera.Evento.CantidadParticipantes)
 			throw new DomainRuleException("No se pueden agregar más participantes a esta carrera");
 
 		Usuario? usuario = await _db.Usuarios.FindAsync(participanteId);
@@ -84,6 +91,8 @@ public class CarreraService : ICarreraService
 		if (participante is null) 
 			throw new DomainRuleException("El usuario no es un participante válido");
 
+		await _db.Entry(participante).ReloadAsync();
+
 		participante.Carreras.Add(participacion);
 		carrera.Participaciones.Add(participacion);
 
@@ -104,6 +113,12 @@ public class CarreraService : ICarreraService
 		Participacion? participacion = await _db.Participaciones
 			.FirstOrDefaultAsync(p => p.EventoId == eventoId && p.ParticipanteId == participanteId);
 		if (participacion is null) throw new NotFoundException("Participación no encontrada");
+
+		await _db.Entry(carrera).ReloadAsync();
+		await _db.Entry(carrera.Evento!).ReloadAsync();
+
+		if (carrera.Evento!.EstadoEvento == EstadoEvento.Finalizado || carrera.Evento.EstadoEvento == EstadoEvento.EnCurso)
+			throw new DomainRuleException("No se puede desinscribir un participante de una carrera en curso o finalizada");
 
 		_db.Participaciones.Remove(participacion);
 		participante.Carreras.Remove(participacion);
@@ -219,6 +234,8 @@ public class CarreraService : ICarreraService
 
 		if (carrera is null)
 			return null;
+
+		await _db.Entry(carrera).ReloadAsync();
 
 		var participaciones = await _db.Participaciones
 			.Include(p => p.Participante)

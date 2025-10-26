@@ -3,11 +3,13 @@
 @using System.Linq
 @using GestorEventosDeportivos.Modules.Carreras.Domain.Entities
 @using GestorEventosDeportivos.Modules.Carreras.Domain.Enums
+@using GestorEventosDeportivos.Modules.ProgresoCarreras.Application
 @using GestorEventosDeportivos.Modules.ProgresoCarreras.Domain.Entities
 @using GestorEventosDeportivos.Modules.Usuarios.Application.Services
 
 @inject ICarreraService CarreraService
 @inject IUsuarioServices UsuarioService
+@inject IProgresoService ProgresoService
 @inject NavigationManager Nav
 @inject AuthenticationStateProvider AuthStateProvider
 @inject SweetAlertService Swal;
@@ -28,23 +30,32 @@
             }
         }
     } else {
-        if (!_registroHabilitado) {
-            <button class="btn btn-secondary" disabled>
-                Registro no habilitado
+        if (_cargando) {
+            <button class="btn btn-info" disabled>
+                Cargando...
             </button>
         } else {
-            if (_cargando) {
-                <button class="btn btn-info" disabled>
-                    Cargando...
+            if (!_registroHabilitado && !_usuarioEstaInscripto) { 
+                // Si no esta habilitado el registro y no esta inscripto no lo dejo inscribirse
+                <button class="btn btn-secondary" disabled>
+                    Registro no habilitado
                 </button>
-            } else if(_usuarioEstaInscripto) {
-                <button class="btn btn-danger" @onclick="DesinscribirUsuario">
-                    Desinscribirme
-                </button>
-            } else {
-                <button class="btn btn-primary" @onclick="InscribirUsuario">
+            } else if (_registroHabilitado && !_usuarioEstaInscripto) {
+                // Si esta habilitado el registro y no esta inscripto lo dejo inscribirse
+                 <button class="btn btn-primary" @onclick="InscribirUsuario">
                     Inscribirme
                 </button>
+            } else if (_usuarioEstaInscripto) {
+                if (_estadoEvento == EstadoEvento.SinComenzar) {
+                    // Si esta inscripto y no ha comenzado lo dejo desinscribirse independientemente de si esta habilitado el registro
+                    <button class="btn btn-danger" @onclick="DesinscribirUsuario">
+                        Desinscribirme
+                    </button>
+                } else if (_estadoEvento == EstadoEvento.EnCurso && _estadoParticipacion == EstadoParticipanteEnCarrera.EnCurso) {
+                    <button class="btn btn-danger" @onclick="AbandonarCarrera">
+                        Abandonar la carrera
+                    </button>
+                }
             }
         }
     }
@@ -64,11 +75,12 @@
     private bool _usuarioEstaInscripto = false;
     private List<Participacion> _participacionesUsuario = new();
     private bool _usuarioEsAdmin;
+    private EstadoParticipanteEnCarrera _estadoParticipacion;
 
     protected override async Task OnInitializedAsync()
     {
         _idUsuario = await ObtenerAutenticacion();
-        _usuarioEstaInscripto = await ObtenerEstadoInscripcionDeUsuario();
+        await ObtenerEstadoInscripcionDeUsuario();
         await ObtenerEstadoCarrera();
 
         _cargando = false;
@@ -97,13 +109,18 @@
         _registroHabilitado = false;
     }
 
-    private async Task<bool> ObtenerEstadoInscripcionDeUsuario() {
+    private async Task ObtenerEstadoInscripcionDeUsuario() {
         if (_idUsuario != Guid.Empty) {
             _participacionesUsuario = (await UsuarioService.ObtenerParticipacionesDeUsuario(_idUsuario)).ToList();
             Participacion? p = _participacionesUsuario.FirstOrDefault(p => p.EventoId.Equals(IdEvento));
-            return (p is not null);
+            if (p is null) {
+                _usuarioEstaInscripto = false;
+                return;
+            }
+            _usuarioEstaInscripto = true;
+            _estadoParticipacion = p.Estado;
         } else {
-            return false;
+            _usuarioEstaInscripto = false;
         }
     }
 
@@ -116,7 +133,7 @@
         try {
             _cargando = true;
             await CarreraService.AgregarParticipante(IdEvento, _idUsuario);
-            AlertActualizacionExitosa("Actualización exitosa");
+            AlertActualizacionExitosa("Inscripción exitosa");
         } catch(NotFoundException ex) {
             AlertActualizacionFallida(ex.Message);
         } catch(DuplicateException ex) {
@@ -125,9 +142,10 @@
             AlertActualizacionFallida(ex.Message);
         } catch (Exception) {
             AlertActualizacionFallida("Ocurrió un error inesperado, intente de nuevo más tarde");
+        } finally {
+            await ActualizarComponente();
+            ActualizarComponentePadre?.Invoke();
         }
-        await ActualizarComponente();
-        ActualizarComponentePadre?.Invoke();
     }
 
     private async Task DesinscribirUsuario() {
@@ -142,44 +160,85 @@
             AlertActualizacionFallida(ex.Message);   
         } catch(Exception) {
             AlertActualizacionFallida("Ocurrió un error inesperado, intente de nuevo más tarde");
+        } finally {
+            await ActualizarComponente();
+            ActualizarComponentePadre?.Invoke();
         }
-        
-        await ActualizarComponente();
-        ActualizarComponentePadre?.Invoke();
     }
 
-    private async Task HabilitarInscripciones() {
+    private async Task AbandonarCarrera() {
+        bool respuesta = await AlertSolicitudConfirmacion(
+            "¿Está seguro que desea abandonar la carrera?", 
+            "Esta acción no es reversible.");
+
+        if (!respuesta) return;
+
         try {
-            await CarreraService.HabilitarRegistro(IdEvento);
-            await ObtenerEstadoCarrera();
-            AlertActualizacionExitosa("Actualización exitosa");
+            await ProgresoService.AbandonarCarrera(IdCarrera, _idUsuario);
+            AlertActualizacionExitosa("Se ha abandonado la carrera");
         } catch(NotFoundException ex) {
             AlertActualizacionFallida(ex.Message);   
         } catch (DomainRuleException ex) {
             AlertActualizacionFallida(ex.Message);
         } catch(Exception) {
             AlertActualizacionFallida("Ocurrió un error inesperado, intente de nuevo más tarde");
+        } finally {
+            await ActualizarComponente();
         }
-        StateHasChanged();
+    }
+
+    private async Task HabilitarInscripciones() {
+        try {
+            Evento? ev = await CarreraService.HabilitarRegistro(IdEvento);
+            _registroHabilitado = ev!.RegistroHabilitado;
+            AlertActualizacionExitosa("Las inscripciones fueron habilitadas");
+        } catch(NotFoundException ex) {
+            AlertActualizacionFallida(ex.Message);   
+        } catch (DomainRuleException ex) {
+            AlertActualizacionFallida(ex.Message);
+        } catch(Exception) {
+            AlertActualizacionFallida("Ocurrió un error inesperado, intente de nuevo más tarde");
+        } finally {
+            StateHasChanged();  
+        }
     }
 
     private async Task DeshabilitarInscripciones() {
         try {
-            await CarreraService.DeshabilitarRegistro(IdEvento);
-            await ObtenerEstadoCarrera();
-            AlertActualizacionExitosa("Actualización exitosa");
+            Evento? ev = await CarreraService.DeshabilitarRegistro(IdEvento);
+            _registroHabilitado = ev!.RegistroHabilitado;
+            AlertActualizacionExitosa("Las inscripciones fueron deshabilitadas");
         } catch(NotFoundException ex) {
             AlertActualizacionFallida(ex.Message);   
         } catch(Exception) {
             AlertActualizacionFallida("Ocurrió un error inesperado, intente de nuevo más tarde");
+        } finally {
+            StateHasChanged();
         }
-        StateHasChanged();
     }
 
     private async Task ActualizarComponente() {
-        _usuarioEstaInscripto = await ObtenerEstadoInscripcionDeUsuario();
+        await ObtenerEstadoCarrera();
+        await ObtenerEstadoInscripcionDeUsuario();
         _cargando = false;
         StateHasChanged();
+    }
+
+    private async Task<bool> AlertSolicitudConfirmacion(string titulo, string mensaje) {
+        SweetAlertResult? respuesta = await Swal.FireAsync(new SweetAlertOptions
+        {
+            Title = titulo,
+            Text = mensaje,
+            Icon = SweetAlertIcon.Warning,
+            ShowCancelButton = true,
+            ConfirmButtonText = "Sí, estoy seguro",
+            CancelButtonText = "Cancelar"
+        });
+
+        if (!string.IsNullOrEmpty(respuesta.Value) && respuesta.IsConfirmed) {
+            return true;
+        }
+        return false;
     }
 
     private async void AlertActualizacionFallida(string mensaje) {
