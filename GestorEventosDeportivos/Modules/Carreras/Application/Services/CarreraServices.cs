@@ -24,7 +24,7 @@ public class CarreraService : ICarreraService
 		{
 			Nombre = nombre,
 			FechaInicio = fechaInicio,
-			CantidadParticipantes = Capacidad,
+			CapacidadParticipantes = Capacidad,
 			Ubicacion = Ubicacion
 		};
 		_db.Eventos.Add(ev);
@@ -62,8 +62,7 @@ public class CarreraService : ICarreraService
 		if (!carrera.Evento!.RegistroHabilitado)
 			throw new DomainRuleException("El registro no está habilitado para esta carrera");
 
-
-		if (carrera.Participaciones.Count >= carrera.Evento.CantidadParticipantes)
+		if (carrera.CantidadParticipacionesPagas >= carrera.Evento.CapacidadParticipantes)
 			throw new DomainRuleException("No se pueden agregar más participantes a esta carrera");
 
 		Usuario? usuario = await _db.Usuarios.FindAsync(participanteId);
@@ -86,7 +85,7 @@ public class CarreraService : ICarreraService
 			Progreso = new Dictionary<uint, TimeSpan> { }
 		};
 		await _db.Participaciones.AddAsync(participacion);
-
+		
 		Participante? participante = usuario as Participante;
 		if (participante is null) 
 			throw new DomainRuleException("El usuario no es un participante válido");
@@ -95,6 +94,26 @@ public class CarreraService : ICarreraService
 
 		participante.Carreras.Add(participacion);
 		carrera.Participaciones.Add(participacion);
+
+		return await _db.SaveChangesAsync().ContinueWith(t => t.Result > 0);
+	}
+
+	public async Task<bool> ActualizarEstadoPagoParticipacion(Guid carreraId, Guid participanteId, EstadoPago nuevoEstadoPago)
+	{
+		Carrera? carrera = await _db.Carreras.Include(c => c.Evento).FirstOrDefaultAsync(c => c.Id == carreraId);
+		if (carrera is null) throw new NotFoundException("Carrera no encontrada");
+
+		Participacion? participacion = await _db.Participaciones
+			.Include(p => p.Evento)
+			.FirstOrDefaultAsync(p => p.EventoId == carrera.EventoId && p.ParticipanteId == participanteId);
+
+		if (participacion is null) throw new NotFoundException("Participación no encontrada");
+
+		participacion.EstadoPago = nuevoEstadoPago;
+		if (nuevoEstadoPago == EstadoPago.Confirmado)
+        {
+			carrera.CantidadParticipacionesPagas += 1;
+        }
 
 		return await _db.SaveChangesAsync().ContinueWith(t => t.Result > 0);
 	}
@@ -123,6 +142,11 @@ public class CarreraService : ICarreraService
 		_db.Participaciones.Remove(participacion);
 		participante.Carreras.Remove(participacion);
 		carrera.Participaciones.Remove(participacion);
+		
+		if (participacion.EstadoPago == EstadoPago.Confirmado)
+		{
+			carrera.CantidadParticipacionesPagas = Math.Max(0, carrera.CantidadParticipacionesPagas - 1);
+		}
 
 		return await _db.SaveChangesAsync().ContinueWith(t => t.Result > 0);
 	}

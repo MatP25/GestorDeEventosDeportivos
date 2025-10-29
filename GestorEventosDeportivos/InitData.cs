@@ -61,7 +61,7 @@ public class InitData
                     Ubicacion = "San Carlos",
                     RegistroHabilitado = false,
                     EstadoEvento = EstadoEvento.Finalizado,
-                    CantidadParticipantes = 10
+                    CapacidadParticipantes = 10
                 });
 
                 evento2 = context.Eventos.Add(new()
@@ -71,7 +71,7 @@ public class InitData
                     Ubicacion = "Maldonado",
                     RegistroHabilitado = true,
                     EstadoEvento = EstadoEvento.SinComenzar,
-                    CantidadParticipantes = 10
+                    CapacidadParticipantes = 10
                 });
 
                 evento3 = context.Eventos.Add(new()
@@ -81,7 +81,7 @@ public class InitData
                     Ubicacion = "Punta del Este",
                     RegistroHabilitado = false,
                     EstadoEvento = EstadoEvento.Finalizado,
-                    CantidadParticipantes = 10
+                    CapacidadParticipantes = 10
                 });
 
                 evento4 = context.Eventos.Add(new()
@@ -91,7 +91,7 @@ public class InitData
                     Ubicacion = "Montevideo",
                     RegistroHabilitado = false,
                     EstadoEvento = EstadoEvento.EnCurso,
-                    CantidadParticipantes = 10
+                    CapacidadParticipantes = 10
                 });
 
                 evento5 = context.Eventos.Add(new()
@@ -101,7 +101,7 @@ public class InitData
                     Ubicacion = "Colonia",
                     RegistroHabilitado = true,
                     EstadoEvento = EstadoEvento.SinComenzar,
-                    CantidadParticipantes = 20
+                    CapacidadParticipantes = 20
                 });
 
                 carrera1 = context.Carreras.Add(new()
@@ -116,7 +116,8 @@ public class InitData
                         new PuntoDeControl { Posicion = 2, Ubicacion = "Punto 2 - Km 21" },
                         new PuntoDeControl { Posicion = 3, Ubicacion = "Punto 3 - Km 32" },
                         new PuntoDeControl { Posicion = 4, Ubicacion = "Punto 4 - Km 42" }
-                    }
+                    },
+                    CantidadParticipacionesPagas = 3
                 });
 
                 carrera2 = context.Carreras.Add(new()
@@ -129,7 +130,8 @@ public class InitData
                         new PuntoDeControl { Posicion = 2, Ubicacion = "Punto 2 - Km 10" },
                         new PuntoDeControl { Posicion = 3, Ubicacion = "Punto 3 - Km 15" },
                         new PuntoDeControl { Posicion = 4, Ubicacion = "Punto 4 - Km 21" }
-                    }
+                    },
+                    CantidadParticipacionesPagas = 3
                 });
 
                 carrera3 = context.Carreras.Add(new()
@@ -142,7 +144,8 @@ public class InitData
                     {
                         new PuntoDeControl { Posicion = 1, Ubicacion = "Punto 1 - Km 10" },
                         new PuntoDeControl { Posicion = 2, Ubicacion = "Punto 2 - Km 20" }
-                    }
+                    },
+                    CantidadParticipacionesPagas = 3
                 });
 
                 carrera4 = context.Carreras.Add(new()
@@ -153,7 +156,8 @@ public class InitData
                     {
                         new PuntoDeControl { Posicion = 1, Ubicacion = "Punto 1 - Km 5" },
                         new PuntoDeControl { Posicion = 2, Ubicacion = "Punto 2 - Km 10" }
-                    }
+                    },
+                    CantidadParticipacionesPagas = 3
                 });
 
                 carrera5 = context.Carreras.Add(new()
@@ -165,7 +169,8 @@ public class InitData
                         new PuntoDeControl { Posicion = 1, Ubicacion = "Punto 1 - Km 5" },
                         new PuntoDeControl { Posicion = 2, Ubicacion = "Punto 2 - Km 10" },
                         new PuntoDeControl { Posicion = 3, Ubicacion = "Punto 3 - Km 15" }
-                    }
+                    },
+                    CantidadParticipacionesPagas = 8
                 });
 
                 participante1 = context.Participantes.Add(new()
@@ -288,7 +293,8 @@ public class InitData
                         { 2, new TimeSpan(1, 30, 0) },
                         { 3, new TimeSpan(2, 20, 0) },
                         { 4, new TimeSpan(3, 15, 30) }
-                    }
+                    },
+                    EstadoPago = EstadoPago.Confirmado
                 });
 
                 participacion2carrera1 = context.Participaciones.Add(
@@ -303,7 +309,8 @@ public class InitData
                         {
                             { 1, new TimeSpan(0, 50, 0) },
                             { 2, new TimeSpan(1, 40, 0) }
-                        }
+                        },
+                        EstadoPago = EstadoPago.Confirmado
                     });
 
                 participacion3carrera1 = context.Participaciones.Add(
@@ -317,7 +324,8 @@ public class InitData
                         Progreso = new Dictionary<uint, TimeSpan>
                         {
                             { 1, new TimeSpan(0, 25, 0) }
-                        }
+                        },
+                        EstadoPago = EstadoPago.Confirmado
                     });
 
                 participacion1carrera2 = context.Participaciones.Add(
@@ -328,7 +336,8 @@ public class InitData
                         NumeroCorredor = 0,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
-                        Progreso = new Dictionary<uint, TimeSpan> { }
+                        Progreso = new Dictionary<uint, TimeSpan> { },
+                        EstadoPago = EstadoPago.Confirmado
                     });
 
                 participacion2carrera2 = context.Participaciones.Add(
@@ -339,7 +348,8 @@ public class InitData
                         NumeroCorredor = 0,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
-                        Progreso = new Dictionary<uint, TimeSpan> { }
+                        Progreso = new Dictionary<uint, TimeSpan> { },
+                        EstadoPago = EstadoPago.Confirmado
                     });
 
                 participacion3carrera2 = context.Participaciones.Add(
@@ -350,7 +360,8 @@ public class InitData
                         NumeroCorredor = 0,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
-                        Progreso = new Dictionary<uint, TimeSpan> { }
+                        Progreso = new Dictionary<uint, TimeSpan> { },
+                        EstadoPago = EstadoPago.Confirmado
                     });
 
                 participacion1carrera3 = context.Participaciones.Add(
@@ -365,7 +376,8 @@ public class InitData
                         {
                             { 1, new TimeSpan(0, 40, 0) },
                             { 2, new TimeSpan(2, 35, 48) }
-                        }
+                        },
+                        EstadoPago = EstadoPago.Confirmado
                     });
                 participacion2carrera3 = context.Participaciones.Add(
                     new Participacion
@@ -378,7 +390,8 @@ public class InitData
                         Progreso = new Dictionary<uint, TimeSpan>
                         {
                             { 1, new TimeSpan(0, 55, 0) }
-                        }
+                        },
+                        EstadoPago = EstadoPago.Confirmado
                     });
                 participacion3carrera3 = context.Participaciones.Add(
                     new Participacion
@@ -392,7 +405,8 @@ public class InitData
                         {
                             { 1, new TimeSpan(0, 30, 0) },
                             { 2, new TimeSpan(1, 30, 12) }
-                        }
+                        },
+                        EstadoPago = EstadoPago.Confirmado
                     });
 
                 // Participaciones para carrera4 (en curso)
@@ -407,7 +421,8 @@ public class InitData
                         Progreso = new Dictionary<uint, TimeSpan>
                         {
                             { 1, new TimeSpan(0, 20, 30) }
-                        }
+                        },
+                        EstadoPago = EstadoPago.Confirmado
                     });
 
                 participacion2carrera4 = context.Participaciones.Add(
@@ -421,7 +436,8 @@ public class InitData
                         Progreso = new Dictionary<uint, TimeSpan>
                         {
                             { 1, new TimeSpan(0, 22, 15) }
-                        }
+                        },
+                        EstadoPago = EstadoPago.Confirmado
                     });
 
                 participacion3carrera4 = context.Participaciones.Add(
@@ -432,7 +448,8 @@ public class InitData
                         NumeroCorredor = 103,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.EnCurso,
-                        Progreso = new Dictionary<uint, TimeSpan> { }
+                        Progreso = new Dictionary<uint, TimeSpan> { },
+                        EstadoPago = EstadoPago.Confirmado
                     });
 
                 // Participaciones para carrera5 (sin comenzar)
@@ -444,7 +461,8 @@ public class InitData
                         NumeroCorredor = 0,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
-                        Progreso = new Dictionary<uint, TimeSpan> { }
+                        Progreso = new Dictionary<uint, TimeSpan> { },
+                        EstadoPago = EstadoPago.Confirmado
                     });
                 
                 participacion2carrera5 = context.Participaciones.Add(
@@ -455,7 +473,8 @@ public class InitData
                         NumeroCorredor = 0,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.EnCurso,
-                        Progreso = new Dictionary<uint, TimeSpan> { }
+                        Progreso = new Dictionary<uint, TimeSpan> { },
+                        EstadoPago = EstadoPago.Confirmado
                     });
 
                 participacion3carrera5 = context.Participaciones.Add(
@@ -466,7 +485,8 @@ public class InitData
                         NumeroCorredor = 0,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
-                        Progreso = new Dictionary<uint, TimeSpan> { }
+                        Progreso = new Dictionary<uint, TimeSpan> { },
+                        EstadoPago = EstadoPago.Confirmado
                     });
 
                 participacion4carrera5 = context.Participaciones.Add(
@@ -477,7 +497,8 @@ public class InitData
                         NumeroCorredor = 0,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
-                        Progreso = new Dictionary<uint, TimeSpan> { }
+                        Progreso = new Dictionary<uint, TimeSpan> { },
+                        EstadoPago = EstadoPago.Confirmado
                     });
 
                 participacion5carrera5 = context.Participaciones.Add(
@@ -488,7 +509,8 @@ public class InitData
                         NumeroCorredor = 0,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
-                        Progreso = new Dictionary<uint, TimeSpan> { }
+                        Progreso = new Dictionary<uint, TimeSpan> { },
+                        EstadoPago = EstadoPago.Confirmado
                     });
 
                 participacion6carrera5 = context.Participaciones.Add(
@@ -499,7 +521,8 @@ public class InitData
                         NumeroCorredor = 0,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
-                        Progreso = new Dictionary<uint, TimeSpan> { }
+                        Progreso = new Dictionary<uint, TimeSpan> { },
+                        EstadoPago = EstadoPago.Confirmado
                     });
 
                 participacion7carrera5 = context.Participaciones.Add(
@@ -510,7 +533,8 @@ public class InitData
                         NumeroCorredor = 0,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
-                        Progreso = new Dictionary<uint, TimeSpan> { }
+                        Progreso = new Dictionary<uint, TimeSpan> { },
+                        EstadoPago = EstadoPago.Confirmado
                     });
 
                 participacion8carrera5 = context.Participaciones.Add(
@@ -521,7 +545,8 @@ public class InitData
                         NumeroCorredor = 0,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
-                        Progreso = new Dictionary<uint, TimeSpan> { }
+                        Progreso = new Dictionary<uint, TimeSpan> { },
+                        EstadoPago = EstadoPago.Confirmado
                     });
 
                 participacion9carrera5 = context.Participaciones.Add(
@@ -532,7 +557,8 @@ public class InitData
                         NumeroCorredor = 0,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
-                        Progreso = new Dictionary<uint, TimeSpan> { }
+                        Progreso = new Dictionary<uint, TimeSpan> { },
+                        EstadoPago = EstadoPago.NoRealizado
                     });
 
                 participacion10carrera5 = context.Participaciones.Add(
@@ -543,7 +569,8 @@ public class InitData
                         NumeroCorredor = 0,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
-                        Progreso = new Dictionary<uint, TimeSpan> { }
+                        Progreso = new Dictionary<uint, TimeSpan> { },
+                        EstadoPago = EstadoPago.NoRealizado
                     });
 
                 participacion11carrera5 = context.Participaciones.Add(
@@ -554,7 +581,8 @@ public class InitData
                         NumeroCorredor = 0,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
-                        Progreso = new Dictionary<uint, TimeSpan> { }
+                        Progreso = new Dictionary<uint, TimeSpan> { },
+                        EstadoPago = EstadoPago.NoRealizado
                     });
                     
                 participacion12carrera5 = context.Participaciones.Add(
@@ -565,7 +593,8 @@ public class InitData
                         NumeroCorredor = 0,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
-                        Progreso = new Dictionary<uint, TimeSpan> { }
+                        Progreso = new Dictionary<uint, TimeSpan> { },
+                        EstadoPago = EstadoPago.NoRealizado
                     });
 
                 participante1.Entity.Carreras.AddRange(new[]

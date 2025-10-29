@@ -19,11 +19,11 @@ public class ProgresoServices : IProgresoService
         _carreraService = carreraService;
     }
 
-    public async Task<Participacion> VerProgresoDeParticipanteEnCarrera(Guid carreraId, Guid participanteId)
+    public async Task<Participacion> VerProgresoDeParticipanteEnCarrera(Guid eventoId, Guid participanteId)
     {
-        Participacion? participacion = await _context.Participaciones.FirstOrDefaultAsync(p => p.EventoId == carreraId && p.ParticipanteId == participanteId);
+        Participacion? participacion = await _context.Participaciones.FirstOrDefaultAsync(p => p.EventoId == eventoId && p.ParticipanteId == participanteId);
         if (participacion == null)
-            throw new NotFoundException($"No se encontró la participación del usuario de Id {participanteId} en la carrera {carreraId}.");
+            throw new NotFoundException($"No se encontró la participación del usuario de Id {participanteId} en el evento {eventoId}.");
 
         return participacion;
     }

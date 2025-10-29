@@ -17,6 +17,7 @@ public class Participacion : BaseEntity<Guid>
     public uint NumeroCorredor { get; set; }
     public uint Puesto { get; set; }
     public EstadoParticipanteEnCarrera Estado { get; set; } = EstadoParticipanteEnCarrera.SinComenzar;
+    public EstadoPago EstadoPago { get; set; } = EstadoPago.NoRealizado;
 
     // progreso -> ([uint] clave) seria el numero de punto de control (posicion) y ([TimeSpan] valor) = Tiempo en el que paso por ese punto
     public Dictionary<uint, TimeSpan> Progreso { get; set; } = new();
