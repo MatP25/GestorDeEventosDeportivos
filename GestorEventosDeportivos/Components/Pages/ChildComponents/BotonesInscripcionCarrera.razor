@@ -51,6 +51,21 @@
                     <button class="btn btn-danger" @onclick="DesinscribirUsuario">
                         Desinscribirme
                     </button>
+
+                    if (_estadoPagoParticipacion == EstadoPago.NoRealizado) {
+                        <button class="ms-4 btn btn-success" @onclick="IrAPagar">
+                            Pagar Inscripción
+                        </button>
+                    } else if (_estadoPagoParticipacion == EstadoPago.AprobacionPendiente) { 
+                        <button class="ms-4 btn btn-secondary" disabled>
+                            Pago Pendiente de Aprobación
+                        </button>
+                    } else {
+                        <button class="ms-4 btn btn-info" disabled>
+                            Inscripción Paga
+                        </button> 
+                    }
+                    
                 } else if (_estadoEvento == EstadoEvento.EnCurso && _estadoParticipacion == EstadoParticipanteEnCarrera.EnCurso) {
                     <button class="btn btn-danger" @onclick="AbandonarCarrera">
                         Abandonar la carrera
@@ -76,6 +91,7 @@
     private List<Participacion> _participacionesUsuario = new();
     private bool _usuarioEsAdmin;
     private EstadoParticipanteEnCarrera _estadoParticipacion;
+    private EstadoPago _estadoPagoParticipacion;
 
     protected override async Task OnInitializedAsync()
     {
@@ -115,10 +131,12 @@
             Participacion? p = _participacionesUsuario.FirstOrDefault(p => p.EventoId.Equals(IdEvento));
             if (p is null) {
                 _usuarioEstaInscripto = false;
+                _estadoPagoParticipacion = EstadoPago.NoRealizado;
                 return;
             }
             _usuarioEstaInscripto = true;
             _estadoParticipacion = p.Estado;
+            _estadoPagoParticipacion = p.EstadoPago;
         } else {
             _usuarioEstaInscripto = false;
         }
@@ -149,7 +167,14 @@
     }
 
     private async Task DesinscribirUsuario() {
+        if (_estadoPagoParticipacion == EstadoPago.Confirmado) {
+            bool respuesta = await AlertSolicitudConfirmacion(
+            "¿Está seguro que desea desinscribirse de la carrera?", 
+            "Su pago ya fue procesado y el sistema no efectúa reembolsos. Al perder la inscripción deberá abonar nuevamente.");
 
+            if (!respuesta) return;
+        }
+        
         try {
             _cargando = true;
             await CarreraService.QuitarParticipante(IdEvento, _idUsuario);
@@ -258,5 +283,9 @@
             Icon = "success"
         }
         );
+    }
+
+    private async void IrAPagar() {
+        Nav.NavigateTo($"/pagos/{IdCarrera}");
     }
 }
