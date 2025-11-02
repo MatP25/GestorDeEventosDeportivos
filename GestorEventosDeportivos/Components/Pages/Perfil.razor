@@ -130,6 +130,7 @@
                             <tr>
                                 <th>Evento</th>
                                 <th>Estado</th>
+                                <th>Número</th>
                                 <th>Tiempo</th>
                                 <th>Puesto</th>
                                 <th class="text-end">Acciones</th>
@@ -141,6 +142,7 @@
                                 <tr>
                                     <td>@p.Evento?.Nombre</td>
                                     <td><span class="badge @GetEstadoBadge(p.Estado)">@p.Estado</span></td>
+                                    <td>@(p.NumeroCorredor > 0 ? p.NumeroCorredor : "--")</td>
                                     <td>@FormatearTiempoFinal(p)</td>
                                     <td>@(p.Puesto == 0 ? "--" : p.Puesto.ToString())</td>
                                     <td class="text-end">
@@ -148,7 +150,14 @@
                                             && p.Evento.EstadoEvento == EstadoEvento.Finalizado 
                                             && CarreraPorEvento.TryGetValue(p.EventoId, out var carreraId))
                                         {
-                                            <a class="btn btn-sm btn-outline-primary" href="/carreras/@carreraId/resultados">Ver resultados</a>
+                                            @if (p.NumeroCorredor > 0)
+                                            {
+                                                <a class="btn btn-sm btn-outline-primary" href="/carreras/@carreraId/resultados?bib=@p.NumeroCorredor">Ver resultados</a>
+                                            }
+                                            else
+                                            {
+                                                <a class="btn btn-sm btn-outline-primary" href="/carreras/@carreraId/resultados">Ver resultados</a>
+                                            }
                                         }
                                         else
                                         {
