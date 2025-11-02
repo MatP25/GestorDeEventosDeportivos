@@ -1,6 +1,7 @@
 @page "/carreras/{id:guid}/detalles"
 @using GestorEventosDeportivos.Modules.Carreras.Application.Services
 @using GestorEventosDeportivos.Modules.Carreras.Domain.Entities
+@using GestorEventosDeportivos.Modules.Carreras.Domain.Enums
 @using GestorEventosDeportivos.Modules.ProgresoCarreras.Domain.Entities
 @using GestorEventosDeportivos.Shared.Domain.Common
 @using System.Security.Claims
@@ -15,69 +16,82 @@
 
 <h1>Detalles de la carrera</h1>
 
-@if (cargando)
-{
-    <p>Cargando carrera</p>
-}
-else if (!string.IsNullOrEmpty(error))
-{
-    <div class="alert alert-danger">@error</div>
-}
-else if (Carrera is null)
-{
-    <div class="alert alert-warning">No se encontró la carrera solicitada.</div>
-}
-else
-{
-    <GestorEventosDeportivos.Components.Pages.ChildComponents.EncabezadoDetallesCarrera 
-        Carrera="@Carrera"
-    />
+<div class="mb-5">
 
-    <h4 class="mt-4">Participantes inscriptos (@_totalElementos)</h4>
-    @if (_registroHabilitado) {
-        <p>Hay @(Carrera?.Evento?.CantidadParticipantes - _totalElementos) cupos disponibles.</p>
+    @if (cargando)
+    {
+        <p>Cargando carrera</p>
     }
-    
-    <GestorEventosDeportivos.Components.Pages.ChildComponents.BotonesInscripcionCarrera 
-        IdEvento="@Carrera!.EventoId"
-        IdCarrera="@Carrera.Id"
-        ActualizarComponentePadre="@OnEventoDeInscripcion"
-    />
+    else if (!string.IsNullOrEmpty(error))
+    {
+        <div class="alert alert-danger">@error</div>
+    }
+    else if (Carrera is null)
+    {
+        <div class="alert alert-warning">No se encontró la carrera solicitada.</div>
+    }
+    else
+    {
+        <GestorEventosDeportivos.Components.Pages.ChildComponents.EncabezadoDetallesCarrera 
+            Carrera="@Carrera"
+        />
 
-    <div class="table-responsive">
-        <table class="table table-sm align-middle">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Participante</th>
-                </tr>
-            </thead>
-            <tbody>
-                @{int Counter = 0;}
-                @foreach (var p in Participaciones)
-                {
+        <h4 class="mt-4">Participantes inscriptos (@_totalElementos)</h4>
+        @if (_registroHabilitado) {
+            <p>Hay @(Carrera?.Evento?.CapacidadParticipantes - _totalElementos) cupos disponibles.</p>
+        }
+        
+        <GestorEventosDeportivos.Components.Pages.ChildComponents.BotonesInscripcionCarrera 
+            IdEvento="@Carrera!.EventoId"
+            IdCarrera="@Carrera.Id"
+            ActualizarComponentePadre="@OnEventoDeInscripcion"
+        />
+
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead>
                     <tr>
-                        <td>@(_pagina > 1 ? ( _tamanoPagina * (_pagina - 1) + ++Counter ) : ++Counter )</td>
-                        <td>@p.Participante?.Nombre @p.Participante?.Apellido</td>
+                        <th>#</th>
+                        <th>Participante</th>
+                        @if(_usuarioEsAdmin) {
+                            <th>Estado del pago</th>
+                        }
                     </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+                </thead>
+                <tbody>
+                    @{int Counter = 0;}
+                    @foreach (var p in Participaciones)
+                    {
+                        <tr>
+                            <td>@(_pagina > 1 ? ( _tamanoPagina * (_pagina - 1) + ++Counter ) : ++Counter )</td>
+                            <td>@p.Participante?.Nombre @p.Participante?.Apellido</td>
+                            @if(_usuarioEsAdmin) {
+                                <td>
+                                    <span class="badge @GetEstadoPagoBadge(@p.EstadoPago)">
+                                        @p.EstadoPago.ToString()
+                                    </span>
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
 
-    <div class="d-flex justify-content-between align-items-center mt-3">
-        <button class="btn btn-outline-info" @onclick="PaginaAnterior" disabled="@(_pagina <= 1)">Anterior</button>
-        <span>Página @_pagina de @_totalPaginas (@_totalElementos elementos)</span>
-        <button class="btn btn-outline-info" @onclick="PaginaSiguiente" disabled="@(_pagina >= _totalPaginas)">Siguiente</button>
-    </div>
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <button class="btn btn-outline-info" @onclick="PaginaAnterior" disabled="@(_pagina <= 1)">Anterior</button>
+            <span>Página @_pagina de @_totalPaginas (@_totalElementos elementos)</span>
+            <button class="btn btn-outline-info" @onclick="PaginaSiguiente" disabled="@(_pagina >= _totalPaginas)">Siguiente</button>
+        </div>
 
-    <GestorEventosDeportivos.Components.Pages.ChildComponents.PuntosDeControlCarrera
-        Carrera="@Carrera"
-    />
+        <GestorEventosDeportivos.Components.Pages.ChildComponents.PuntosDeControlCarrera
+            Carrera="@Carrera"
+        />
 
-    <button class="btn btn-outline-secondary" @onclick="Volver">Volver</button>
+        <button class="btn btn-outline-secondary" @onclick="Volver">Volver</button>
 
-}
+    }
+</div>
 
 @code
 {
@@ -92,9 +106,12 @@ else
     private int _totalPaginas = 1;
     private int _totalElementos = 0;
     private bool _registroHabilitado;
+    private bool _usuarioEsAdmin = false;
 
     protected override async Task OnInitializedAsync()
     {
+        await ObtenerAutenticacion();
+
         try
         {
             cargando = true;
@@ -171,4 +188,21 @@ else
         await CargarPagina();
     }
     
+    private async Task ObtenerAutenticacion() {
+        AuthenticationState? state = await AuthStateProvider.GetAuthenticationStateAsync();
+        ClaimsPrincipal? user = state.User;
+
+        _usuarioEsAdmin = user.IsInRole("Admin");
+    }
+
+    private string GetEstadoPagoBadge(EstadoPago est)
+    {
+        return est switch
+        {
+            EstadoPago.NoRealizado => "text-bg-danger",
+            EstadoPago.AprobacionPendiente => "text-bg-warning",
+            EstadoPago.Confirmado => "text-bg-success",
+            _ => "text-bg-light"
+        };
+    }
 }
