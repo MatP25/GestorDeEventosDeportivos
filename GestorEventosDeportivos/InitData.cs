@@ -838,7 +838,22 @@ public class InitData
                             Progreso = progreso,
                             EstadoPago = EstadoPago.Confirmado
                         });
-                        // Asociar navegación (opcional)
+                        
+                        // Si la carrera esta finalizada mostrar el ganador con el tiempo del ultimo punto de control registrado
+                        if (estadoEvento == EstadoEvento.Finalizado && numero == 1)
+                        {
+                            car.Entity.Ganador = $"{persona.Entity.Nombre} {persona.Entity.Apellido}";
+                            if (progreso.Count > 0)
+                            {
+                                var tiempoFinal = progreso.OrderBy(kv => kv.Key).Last().Value;
+                                car.Entity.TiempoGanador = tiempoFinal;
+                            }
+                            else
+                            {
+                                car.Entity.TiempoGanador = null;
+                            }
+                        }
+                        // Asociar navegacion
                         persona.Entity.Carreras.Add(part.Entity);
                         car.Entity.Participaciones.Add(part.Entity);
                         result.Add(part);
