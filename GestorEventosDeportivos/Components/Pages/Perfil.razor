@@ -17,6 +17,7 @@
     private string? Error { get; set; }
     private List<Participacion> ParticipacionesUsuario { get; set; } = new();
     private Dictionary<Guid, Guid> CarreraPorEvento { get; set; } = new();
+    private bool IsParticipante { get; set; } = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -28,19 +29,24 @@
             return;
         }
         var idStr = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        var role = user.FindFirstValue(ClaimTypes.Role);
+        IsParticipante = string.Equals(role, "Participante", StringComparison.OrdinalIgnoreCase);
         if (Guid.TryParse(idStr, out var id))
         {
             try
             {
                 PerfilData = await UsuarioServices.ObtenerDatosUsuarioId(id);
-                var parts = await CarreraService.ListarParticipacionesDeUsuario(id);
-                ParticipacionesUsuario = parts.ToList();
+                if (IsParticipante)
+                {
+                    var parts = await CarreraService.ListarParticipacionesDeUsuario(id);
+                    ParticipacionesUsuario = parts.ToList();
 
-                // Mapear carreras por evento para poder armar links a resultados
-                var carreras = await CarreraService.ListarCarreras();
-                CarreraPorEvento = carreras
-                    .GroupBy(c => c.EventoId)
-                    .ToDictionary(g => g.Key, g => g.First().Id);
+                    // Mapear carreras por evento para poder armar links a resultados
+                    var carreras = await CarreraService.ListarCarreras();
+                    CarreraPorEvento = carreras
+                        .GroupBy(c => c.EventoId)
+                        .ToDictionary(g => g.Key, g => g.First().Id);
+                }
             }
             catch (Exception ex)
             {
@@ -78,87 +84,87 @@
             <dd class="col-sm-9">@PerfilData.FechaNac</dd>
         </dl>
 
-        <hr />
-        <h5>Mis inscripciones (@ParticipacionesUsuario.Count)</h5>
-        @if (ParticipacionesUsuario.Count == 0)
+        @if (IsParticipante)
         {
-            <p class="text-muted">No estás inscripto en ninguna carrera.</p>
-        }
-        else
-        {
-            <div class="table-responsive">
-                <table class="table table-sm align-middle">
-                    <thead>
-                        <tr>
-                            <th>Evento</th>
-                            <th>Fecha</th>
-                            <th>Ubicación</th>
-                            <th>Número</th>
-                            <th>Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var p in ParticipacionesUsuario)
-                        {
+            <hr />
+            <h5>Mis inscripciones (@ParticipacionesUsuario.Count)</h5>
+            @if (ParticipacionesUsuario.Count == 0)
+            {
+                <p class="text-muted">No estás inscripto en ninguna carrera.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
                             <tr>
-                                <td>@p.Evento?.Nombre</td>
-                                <td>@p.Evento?.FechaInicio.ToString("dd/MM/yyyy HH:mm")</td>
-                                <td>@p.Evento?.Ubicacion</td>
-                                <td>@p.NumeroCorredor</td>
-                                <td><span class="badge @GetEstadoBadge(p.Estado)">@p.Estado</span></td>
+                                <th>Evento</th>
+                                <th>Fecha</th>
+                                <th>Ubicación</th>
+                                <th>Número</th>
+                                <th>Estado</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        }
+                        </thead>
+                        <tbody>
+                            @foreach (var p in ParticipacionesUsuario)
+                            {
+                                <tr>
+                                    <td>@p.Evento?.Nombre</td>
+                                    <td>@p.Evento?.FechaInicio.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>@p.Evento?.Ubicacion</td>
+                                    <td>@p.NumeroCorredor</td>
+                                    <td><span class="badge @GetEstadoBadge(p.Estado)">@p.Estado</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
 
-        <h5 class="mt-4">Mis resultados</h5>
-        {
-            var compitio = ParticipacionesUsuario.Where(x => x.Estado != EstadoParticipanteEnCarrera.SinComenzar).ToList();
-        }
-        @if (ParticipacionesUsuario.Any(x => x.Estado != EstadoParticipanteEnCarrera.SinComenzar))
-        {
-            <div class="table-responsive">
-                <table class="table table-sm align-middle">
-                    <thead>
-                        <tr>
-                            <th>Evento</th>
-                            <th>Estado</th>
-                            <th>Tiempo</th>
-                            <th>Puesto</th>
-                            <th class="text-end">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var p in ParticipacionesUsuario.Where(x => x.Estado != EstadoParticipanteEnCarrera.SinComenzar))
-                        {
+            <h5 class="mt-4">Mis resultados</h5>
+            @if (ParticipacionesUsuario.Any(x => x.Estado != EstadoParticipanteEnCarrera.SinComenzar))
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
                             <tr>
-                                <td>@p.Evento?.Nombre</td>
-                                <td><span class="badge @GetEstadoBadge(p.Estado)">@p.Estado</span></td>
-                                <td>@FormatearTiempoFinal(p)</td>
-                                <td>@(p.Puesto == 0 ? "--" : p.Puesto.ToString())</td>
-                                <td class="text-end">
-                                    @if (p.Evento is not null 
-                                        && p.Evento.EstadoEvento == EstadoEvento.Finalizado 
-                                        && CarreraPorEvento.TryGetValue(p.EventoId, out var carreraId))
-                                    {
-                                        <a class="btn btn-sm btn-outline-primary" href="/carreras/@carreraId/resultados">Ver resultados</a>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">—</span>
-                                    }
-                                </td>
+                                <th>Evento</th>
+                                <th>Estado</th>
+                                <th>Tiempo</th>
+                                <th>Puesto</th>
+                                <th class="text-end">Acciones</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        }
-        else
-        {
-            <p class="text-muted">Aún no compitiste en ninguna carrera.</p>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in ParticipacionesUsuario.Where(x => x.Estado != EstadoParticipanteEnCarrera.SinComenzar))
+                            {
+                                <tr>
+                                    <td>@p.Evento?.Nombre</td>
+                                    <td><span class="badge @GetEstadoBadge(p.Estado)">@p.Estado</span></td>
+                                    <td>@FormatearTiempoFinal(p)</td>
+                                    <td>@(p.Puesto == 0 ? "--" : p.Puesto.ToString())</td>
+                                    <td class="text-end">
+                                        @if (p.Evento is not null 
+                                            && p.Evento.EstadoEvento == EstadoEvento.Finalizado 
+                                            && CarreraPorEvento.TryGetValue(p.EventoId, out var carreraId))
+                                        {
+                                            <a class="btn btn-sm btn-outline-primary" href="/carreras/@carreraId/resultados">Ver resultados</a>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <p class="text-muted">Aún no compitiste en ninguna carrera.</p>
+            }
         }
     }
 </div>
