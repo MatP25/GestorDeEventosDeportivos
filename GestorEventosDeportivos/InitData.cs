@@ -4,6 +4,7 @@ using GestorEventosDeportivos.Modules.ProgresoCarreras.Domain.Entities;
 using GestorEventosDeportivos.Modules.Usuarios.Domain.Entities;
 using GestorEventosDeportivos.Shared.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore;
 
 public class InitData
 {
@@ -173,6 +174,100 @@ public class InitData
                     CantidadParticipacionesPagas = 8
                 });
 
+                // Eventos y carreras adicionales
+                var evento6 = context.Eventos.Add(new()
+                {
+                    Nombre = "Media Maratón 6",
+                    FechaInicio = DateTime.Now.AddDays(10),
+                    Ubicacion = "Paysandú",
+                    RegistroHabilitado = true,
+                    EstadoEvento = EstadoEvento.SinComenzar,
+                    CapacidadParticipantes = 100
+                });
+
+                var evento7 = context.Eventos.Add(new()
+                {
+                    Nombre = "Cross 7",
+                    FechaInicio = DateTime.Now.AddDays(-12),
+                    Ubicacion = "Rocha",
+                    RegistroHabilitado = false,
+                    EstadoEvento = EstadoEvento.Finalizado,
+                    CapacidadParticipantes = 150
+                });
+
+                var evento8 = context.Eventos.Add(new()
+                {
+                    Nombre = "10K 8",
+                    FechaInicio = DateTime.Now,
+                    Ubicacion = "Florida",
+                    RegistroHabilitado = false,
+                    EstadoEvento = EstadoEvento.EnCurso,
+                    CapacidadParticipantes = 120
+                });
+
+                var evento9 = context.Eventos.Add(new()
+                {
+                    Nombre = "Trail 9",
+                    FechaInicio = DateTime.Now.AddDays(-30),
+                    Ubicacion = "Minas",
+                    RegistroHabilitado = false,
+                    EstadoEvento = EstadoEvento.Finalizado,
+                    CapacidadParticipantes = 200
+                });
+
+                var carrera6 = context.Carreras.Add(new()
+                {
+                    EventoId = evento6.Entity.Id,
+                    Longitud = 21000,
+                    PuntosDeControl = new List<PuntoDeControl>
+                    {
+                        new PuntoDeControl { Posicion = 1, Ubicacion = "Km 5" },
+                        new PuntoDeControl { Posicion = 2, Ubicacion = "Km 10" },
+                        new PuntoDeControl { Posicion = 3, Ubicacion = "Km 15" },
+                        new PuntoDeControl { Posicion = 4, Ubicacion = "Km 21" }
+                    },
+                    CantidadParticipacionesPagas = 25
+                });
+
+                var carrera7 = context.Carreras.Add(new()
+                {
+                    EventoId = evento7.Entity.Id,
+                    Longitud = 10000,
+                    PuntosDeControl = new List<PuntoDeControl>
+                    {
+                        new PuntoDeControl { Posicion = 1, Ubicacion = "Km 3" },
+                        new PuntoDeControl { Posicion = 2, Ubicacion = "Km 6" },
+                        new PuntoDeControl { Posicion = 3, Ubicacion = "Km 10" }
+                    },
+                    CantidadParticipacionesPagas = 30
+                });
+
+                var carrera8 = context.Carreras.Add(new()
+                {
+                    EventoId = evento8.Entity.Id,
+                    Longitud = 10000,
+                    PuntosDeControl = new List<PuntoDeControl>
+                    {
+                        new PuntoDeControl { Posicion = 1, Ubicacion = "Km 5" },
+                        new PuntoDeControl { Posicion = 2, Ubicacion = "Km 10" }
+                    },
+                    CantidadParticipacionesPagas = 35
+                });
+
+                var carrera9 = context.Carreras.Add(new()
+                {
+                    EventoId = evento9.Entity.Id,
+                    Longitud = 30000,
+                    PuntosDeControl = new List<PuntoDeControl>
+                    {
+                        new PuntoDeControl { Posicion = 1, Ubicacion = "Km 7" },
+                        new PuntoDeControl { Posicion = 2, Ubicacion = "Km 14" },
+                        new PuntoDeControl { Posicion = 3, Ubicacion = "Km 21" },
+                        new PuntoDeControl { Posicion = 4, Ubicacion = "Km 30" }
+                    },
+                    CantidadParticipacionesPagas = 40
+                });
+
                 participante1 = context.Participantes.Add(new()
                 {
                     Nombre = "Usuario",
@@ -277,6 +372,21 @@ public class InitData
                     Password = "1234",
                     FechaNac = new DateOnly(1998, 12, 12)
                 });
+
+                // Crear ~40 participantes adicionales (13..52)
+                var participantesExtras = new List<EntityEntry<Participante>>();
+                for (int i = 13; i <= 52; i++)
+                {
+                    var p = context.Participantes.Add(new Participante
+                    {
+                        Nombre = "Usuario",
+                        Apellido = i.ToString(),
+                        Email = $"usuario{i}@email.com",
+                        Password = "1234",
+                        FechaNac = new DateOnly(1990 + (i % 10), (i % 12) + 1, ((i % 27) + 1))
+                    });
+                    participantesExtras.Add(p);
+                }
 
 
                 participacion1carrera1 = context.Participaciones.Add(
@@ -673,6 +783,74 @@ public class InitData
                     participacion11carrera5.Entity,
                     participacion12carrera5.Entity
                 });
+
+                // Helper local para generar participaciones masivas
+                List<EntityEntry<Participacion>> GenerarParticipacionesParaCarrera(EntityEntry<Carrera> car, int cantidad, EstadoEvento estadoEvento)
+                {
+                    var todasPersonas = new List<EntityEntry<Participante>>
+                    {
+                        participante1, participante2, participante3, participante4, participante5,
+                        participante6, participante7, participante8, participante9, participante10,
+                        participante11, participante12
+                    };
+                    todasPersonas.AddRange(participantesExtras);
+
+                    var result = new List<EntityEntry<Participacion>>();
+                    for (int i = 0; i < cantidad; i++)
+                    {
+                        var persona = todasPersonas[i % todasPersonas.Count];
+                        var numero = i + 1;
+                        var estadoPart = estadoEvento switch
+                        {
+                            EstadoEvento.Finalizado => EstadoParticipanteEnCarrera.Completada,
+                            EstadoEvento.EnCurso => EstadoParticipanteEnCarrera.EnCurso,
+                            _ => EstadoParticipanteEnCarrera.SinComenzar
+                        };
+
+                        var progreso = new Dictionary<uint, TimeSpan>();
+                        if (estadoEvento == EstadoEvento.Finalizado)
+                        {
+                            // Generar tiempos simples crecientes para PCs
+                            uint pcMax = (uint)(car.Entity.PuntosDeControl?.Count ?? 0);
+                            var baseMin = 30 + (i % 20); // Base para variar
+                            for (uint pc = 1; pc <= pcMax; pc++)
+                            {
+                                progreso[pc] = TimeSpan.FromMinutes(baseMin + (pc * 10));
+                            }
+                        }
+                        else if (estadoEvento == EstadoEvento.EnCurso)
+                        {
+                            uint pcMax = (uint)Math.Max(1, (car.Entity.PuntosDeControl?.Count ?? 1) - 1);
+                            var baseMin = 15 + (i % 15);
+                            for (uint pc = 1; pc <= pcMax; pc++)
+                            {
+                                progreso[pc] = TimeSpan.FromMinutes(baseMin + (pc * 8));
+                            }
+                        }
+
+                        var part = context.Participaciones.Add(new Participacion
+                        {
+                            EventoId = car.Entity.EventoId,
+                            ParticipanteId = persona.Entity.Id,
+                            NumeroCorredor = (uint)numero,
+                            Puesto = estadoEvento == EstadoEvento.Finalizado ? (uint)numero : 0u,
+                            Estado = estadoPart,
+                            Progreso = progreso,
+                            EstadoPago = EstadoPago.Confirmado
+                        });
+                        // Asociar navegación (opcional)
+                        persona.Entity.Carreras.Add(part.Entity);
+                        car.Entity.Participaciones.Add(part.Entity);
+                        result.Add(part);
+                    }
+                    return result;
+                }
+
+                // Generar participaciones para carreras nuevas con volúmenes 22, 28, 35, 40
+                var partsC6 = GenerarParticipacionesParaCarrera(carrera6, 22, evento6.Entity.EstadoEvento);
+                var partsC7 = GenerarParticipacionesParaCarrera(carrera7, 28, evento7.Entity.EstadoEvento);
+                var partsC8 = GenerarParticipacionesParaCarrera(carrera8, 35, evento8.Entity.EstadoEvento);
+                var partsC9 = GenerarParticipacionesParaCarrera(carrera9, 40, evento9.Entity.EstadoEvento);
             }
 
             int cambios = context.SaveChanges();
@@ -683,6 +861,54 @@ public class InitData
                 return;
             }
             Console.WriteLine($"Guardando datos de prueba... {cambios} cambios realizados.");
+        }
+    }
+
+    /// <summary>
+    /// Limpia todas las tablas de la base de datos sin dropear el esquema.
+    /// Prioriza TRUNCATE con FOREIGN_KEY_CHECKS=0 (MySQL). Si falla, hace DELETE en orden seguro.
+    /// </summary>
+    public static void ClearAllTables(IApplicationBuilder applicationBuilder)
+    {
+        using var serviceScope = applicationBuilder.ApplicationServices.CreateScope();
+        var context = serviceScope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        Console.WriteLine("Iniciando limpieza de todas las tablas...");
+
+        try
+        {
+            // MySQL: deshabilitar FKs y truncar para limpiar rápido
+            context.Database.ExecuteSqlRaw("SET FOREIGN_KEY_CHECKS = 0;");
+            context.Database.ExecuteSqlRaw("TRUNCATE TABLE `Participaciones`;");
+            context.Database.ExecuteSqlRaw("TRUNCATE TABLE `PuntosDeControl`;");
+            context.Database.ExecuteSqlRaw("TRUNCATE TABLE `Carreras`;");
+            context.Database.ExecuteSqlRaw("TRUNCATE TABLE `Eventos`;");
+            context.Database.ExecuteSqlRaw("TRUNCATE TABLE `Usuarios`;");
+            context.Database.ExecuteSqlRaw("SET FOREIGN_KEY_CHECKS = 1;");
+
+            Console.WriteLine("Limpieza por TRUNCATE completada.");
+            return;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"TRUNCATE falló o no está soportado: {ex.Message}. Reintentando con DELETE...");
+        }
+
+        // Fallback universal: DELETE en orden respetando FKs
+        // EF Core 7+ soporta ExecuteDelete() sin materializar entidades.
+        try
+        {
+            context.Participaciones.ExecuteDelete();
+            context.PuntosDeControl.ExecuteDelete();
+            context.Carreras.ExecuteDelete();
+            context.Eventos.ExecuteDelete();
+            context.Usuarios.ExecuteDelete();
+            Console.WriteLine("Limpieza por DELETE completada.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al limpiar tablas con DELETE: {ex.Message}");
+            throw;
         }
     }
 }

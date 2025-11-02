@@ -74,10 +74,12 @@ else
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var p in Items)
+                    @for (var i = 0; i < Items.Count; i++)
                     {
+                        var p = Items[i];
+                        var displayIndex = (_filtroActivo ? 0 : (_pagina - 1) * _tamanoPagina) + i + 1;
                         <tr>
-                            <td>@(++row)</td>
+                            <td>@displayIndex</td>
                             <td>@p.Participante?.Nombre @p.Participante?.Apellido</td>
                             <td>@p.NumeroCorredor</td>
                             <td><span class="badge @GetEstadoPartBadge(p.Estado)">@p.Estado</span></td>
@@ -153,7 +155,6 @@ else
     private List<Participacion> Participaciones = new();
     private List<Participacion> _participacionesFiltradas = new();
     private List<Participacion> Items => _filtroActivo ? _participacionesFiltradas : Participaciones;
-    private int row = 0;
     private uint? _ultimaPosicionPc;
     private HashSet<Guid> _expandidos = new();
     private int _pagina = 1;
@@ -211,7 +212,6 @@ else
         cargando = true;
         try
         {
-            row = 0;
             _filtroActivo = false;
             _participacionesFiltradas.Clear();
             var page = await CarreraService.ListarParticipacionesCarreraPaginado(Carrera.Id, _pagina, _tamanoPagina);
@@ -246,7 +246,6 @@ else
         try
         {
             cargando = true;
-            row = 0;
             var first = await CarreraService.ListarParticipacionesCarreraPaginado(Carrera.Id, 1, _tamanoPagina);
             var encontrado = first.Items.FirstOrDefault(p => p.NumeroCorredor == bib);
             if (encontrado is null)

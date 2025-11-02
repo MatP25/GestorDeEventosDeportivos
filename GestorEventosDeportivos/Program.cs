@@ -24,10 +24,9 @@ builder.Services.AddRazorComponents()
 builder.Services.AddTransient<IUsuarioServices, UsuarioServices>();
 builder.Services.AddTransient<IProgresoService , ProgresoServices>();
 builder.Services.AddTransient<ICarreraService , CarreraService>();
-// Verificación de email (demo/simple)
+
 builder.Services.AddSingleton<IEmailService, FakeEmailService>();
 builder.Services.AddSingleton<VerificationUserService>();
-// Removed in-memory admin demo service; administration now uses real services and the DB.
 
 // HttpContext y HttpClient
 builder.Services.AddHttpContextAccessor();
@@ -75,8 +74,18 @@ builder.Services.AddSweetAlert2(options => {
 
 var app = builder.Build();
 
-// Insertar datos de prueba
-InitData.InsertData(app);
+// Limpia las tablas y reinserta datos si es true
+var resetDbOnStart = false;
+if (resetDbOnStart)
+{
+    InitData.ClearAllTables(app);
+    InitData.InsertData(app);
+}
+else
+{
+    // Inserta los datos de prueba solo si la BD esta vacia
+    InitData.InsertData(app);
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -123,7 +132,7 @@ app.MapGet("/verify", async ([FromQuery] Guid token, HttpContext http, Verificat
     return Results.Redirect("/verify-success");
 });
 
-// Endpoint de verificación automática (simula click en email). Dev-only / demo
+// Endpoint de verificación automática (simula click en email)
 app.MapGet("/verify/auto", async ([FromQuery] Guid userId, HttpContext http, VerificationUserService userSvc, AppDbContext db, IHubContext<VerificationHub> hub) =>
 {
     if (userId == Guid.Empty)
@@ -194,7 +203,7 @@ app.MapPost("/auth/login", async (HttpContext http, AppDbContext db) =>
         new Claim(ClaimTypes.Email, usuario.Email)
     };
 
-    // Rol según el tipo
+    // Rol segun el tipo
     var role = usuario is Administrador ? "Admin" : "Participante";
     claims.Add(new Claim(ClaimTypes.Role, role));
 
@@ -212,6 +221,5 @@ app.MapPost("/auth/logout", async (HttpContext http) =>
     return Results.Redirect("/");
 }).RequireAuthorization();
 
-// Nota: si se desea soportar ReturnUrl, reintroducir un validador de URLs locales para evitar open-redirects.
 
 app.Run();
