@@ -4,6 +4,7 @@
 @using GestorEventosDeportivos.Modules.ProgresoCarreras.Domain.Entities
 @using GestorEventosDeportivos.Modules.Carreras.Domain.Enums
 @using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.WebUtilities
 
 @rendermode InteractiveServer
 
@@ -32,8 +33,28 @@ else
         Carrera="@Carrera"
     />
 
-    <h4 class="mt-4">Participantes (@_totalElementos)</h4>
-    @if (Participaciones.Count == 0)
+    <h4 class="mt-4">Participantes (@(_filtroActivo ? _participacionesFiltradas.Count : _totalElementos))</h4>
+
+    <div class="row g-2 align-items-end mb-2">
+        <div class="col-auto">
+            <label for="bibInput" class="form-label mb-0">Número de corredor</label>
+            <input id="bibInput" class="form-control" type="number" min="1" step="1" @bind="_bibQuery" placeholder="Ej: 7" />
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" @onclick="BuscarPorBibAsync">Buscar</button>
+        </div>
+        <div class="col-auto" hidden="@(!_filtroActivo)">
+            <button class="btn btn-outline-secondary" @onclick="LimpiarFiltro">Limpiar</button>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(_mensajeFiltro))
+        {
+            <div class="col-12">
+                <small class="text-muted">@_mensajeFiltro</small>
+            </div>
+        }
+    </div>
+
+    @if (Items.Count == 0)
     {
         <p class="text-muted">No hay participantes registrados para esta carrera.</p>
     }
@@ -53,7 +74,7 @@ else
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var p in Participaciones)
+                    @foreach (var p in Items)
                     {
                         <tr>
                             <td>@(++row)</td>
@@ -105,11 +126,14 @@ else
             </table>
         </div>
 
-        <div class="d-flex justify-content-between align-items-center mt-3">
-            <button class="btn btn-outline-secondary" @onclick="PaginaAnterior" disabled="@(_pagina <= 1)">Anterior</button>
-            <span>Página @_pagina de @_totalPaginas (@_totalElementos elementos)</span>
-            <button class="btn btn-outline-secondary" @onclick="PaginaSiguiente" disabled="@(_pagina >= _totalPaginas)">Siguiente</button>
-        </div>
+        @if (!_filtroActivo)
+        {
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <button class="btn btn-outline-secondary" @onclick="PaginaAnterior" disabled="@(_pagina <= 1)">Anterior</button>
+                <span>Página @_pagina de @_totalPaginas (@_totalElementos elementos)</span>
+                <button class="btn btn-outline-secondary" @onclick="PaginaSiguiente" disabled="@(_pagina >= _totalPaginas)">Siguiente</button>
+            </div>
+        }
 
     <GestorEventosDeportivos.Components.Pages.ChildComponents.PuntosDeControlCarrera
         Carrera="@Carrera"
@@ -127,6 +151,8 @@ else
     private string? error;
     private Carrera? Carrera;
     private List<Participacion> Participaciones = new();
+    private List<Participacion> _participacionesFiltradas = new();
+    private List<Participacion> Items => _filtroActivo ? _participacionesFiltradas : Participaciones;
     private int row = 0;
     private uint? _ultimaPosicionPc;
     private HashSet<Guid> _expandidos = new();
@@ -134,6 +160,9 @@ else
     private int _tamanoPagina = 10;
     private int _totalPaginas = 1;
     private int _totalElementos = 0;
+    private string _bibQuery = string.Empty;
+    private bool _filtroActivo = false;
+    private string? _mensajeFiltro;
 
     protected override async Task OnInitializedAsync()
     {
@@ -153,8 +182,18 @@ else
                 ? Carrera.PuntosDeControl.Max(pc => pc.Posicion)
                 : null;
 
-            // Primera página de participantes
-            await CargarPagina();
+            var uri = Nav.ToAbsoluteUri(Nav.Uri);
+            var parsed = QueryHelpers.ParseQuery(uri.Query ?? string.Empty);
+            if (parsed.TryGetValue("bib", out var bibVals) && int.TryParse(bibVals.FirstOrDefault(), out var bibNum) && bibNum > 0)
+            {
+                _bibQuery = bibNum.ToString();
+                await BuscarPorBibAsync();
+            }
+            else
+            {
+                // Primera página de participantes
+                await CargarPagina();
+            }
         }
         catch (Exception ex)
         {
@@ -173,6 +212,8 @@ else
         try
         {
             row = 0;
+            _filtroActivo = false;
+            _participacionesFiltradas.Clear();
             var page = await CarreraService.ListarParticipacionesCarreraPaginado(Carrera.Id, _pagina, _tamanoPagina);
             Participaciones = page.Items.ToList();
             _totalElementos = page.TotalCount;
@@ -187,6 +228,72 @@ else
             cargando = false;
             StateHasChanged();
         }
+    }
+
+    private async Task BuscarPorBibAsync()
+    {
+        if (Carrera is null) return;
+        _mensajeFiltro = null;
+        _participacionesFiltradas.Clear();
+        _filtroActivo = false;
+
+        if (!int.TryParse(_bibQuery, out var bib) || bib <= 0)
+        {
+            _mensajeFiltro = "Ingrese un número válido";
+            return;
+        }
+
+        try
+        {
+            cargando = true;
+            row = 0;
+            var first = await CarreraService.ListarParticipacionesCarreraPaginado(Carrera.Id, 1, _tamanoPagina);
+            var encontrado = first.Items.FirstOrDefault(p => p.NumeroCorredor == bib);
+            if (encontrado is null)
+            {
+                for (var pagina = 2; pagina <= first.TotalPages; pagina++)
+                {
+                    var page = await CarreraService.ListarParticipacionesCarreraPaginado(Carrera.Id, pagina, _tamanoPagina);
+                    encontrado = page.Items.FirstOrDefault(p => p.NumeroCorredor == bib);
+                    if (encontrado is not null)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            if (encontrado is not null)
+            {
+                _participacionesFiltradas = new List<Participacion> { encontrado };
+                _filtroActivo = true;
+                _mensajeFiltro = $"Mostrando resultado para dorsal {bib}";
+            }
+            else
+            {
+                _participacionesFiltradas.Clear();
+                _filtroActivo = true; // Activo para ocultar paginacion y mostrar vacio controlado
+                _mensajeFiltro = $"No se encontró el dorsal {bib} en esta carrera";
+            }
+        }
+        catch (Exception ex)
+        {
+            error = $"Error al buscar dorsal: {ex.Message}";
+        }
+        finally
+        {
+            cargando = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LimpiarFiltro()
+    {
+        _bibQuery = string.Empty;
+        _mensajeFiltro = null;
+        _participacionesFiltradas.Clear();
+        _filtroActivo = false;
+        _pagina = 1;
+        await CargarPagina();
     }
 
     private async Task PaginaAnterior()
