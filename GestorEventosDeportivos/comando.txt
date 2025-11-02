@@ -24,3 +24,9 @@ docker logs -f gestoreventosdeportivos-nginx-1
 Probar
 
 for i in {1..20}; do curl -s http://localhost:8080/api/progreso/generar-lectura > /dev/null; done
+
+
+Comando extra
+
+dotnet run -- --urls http://0.0.0.0:5195
+dotnet watch run -- --urls http://0.0.0.0:5195
