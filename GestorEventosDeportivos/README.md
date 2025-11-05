@@ -37,11 +37,13 @@ docker logs -f gestoreventosdeportivos-nginx-1
 
 ## Simulación de pago de inscripción desde servicio externo:
 
+El id de pago es un código generado para cada usuario y que se le muestra en el perfil. El código es generado a partir de la encriptación y codificación del Guid del usuario en la base de datos, por lo que se evita hacer público el identificador real.
+
 **Linux**
 
-```curl -X POST http://localhost:5195/api/carreras/{id carrera}/pagos/{id participante}```
+```curl -X POST http://localhost:5195/api/carreras/{id carrera}/pagos/{id de pago}```
 
 **Windows**
 
-```Invoke-WebRequest -Method Post -Uri http://localhost:5195/api/carreras/{id carrera}/pagos/{id participante}```
+```Invoke-WebRequest -Method Post -Uri http://localhost:5195/api/carreras/{id carrera}/pagos/{id de pago}```
 

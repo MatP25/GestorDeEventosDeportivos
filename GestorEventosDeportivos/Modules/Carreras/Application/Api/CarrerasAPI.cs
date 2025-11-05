@@ -14,11 +14,18 @@ public class CarrerasAPI : ControllerBase
         _carreraService = carreraService;
     }
 
-    [HttpPost("{carreraId}/pagos/{participanteId}")]
-    public async Task<string> NuevoPagoExterno([FromRoute] Guid carreraId, [FromRoute] Guid participanteId)
+    [HttpPost("{carreraId}/pagos/{idPago}")]
+    public async Task<string> NuevoPagoExterno([FromRoute] Guid carreraId, [FromRoute] string idPago)
     {
         try
         {
+            Guid.TryParse(EncriptacionIds.DesencriptarString(idPago), out Guid participanteId);
+            if (participanteId == Guid.Empty)
+            {
+                Response.StatusCode = StatusCodes.Status400BadRequest;
+                return "ID de participante inválido.";
+            }
+
             bool resultado = await _carreraService.ActualizarEstadoPagoParticipacion(carreraId, participanteId, EstadoPago.Confirmado);
             if (!resultado)
             {

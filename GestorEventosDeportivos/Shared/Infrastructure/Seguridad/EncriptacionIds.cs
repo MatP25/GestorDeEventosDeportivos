@@ -24,6 +24,30 @@ public class EncriptacionIds
         };
     }
 
+    private static string ToUrlSafeBase64(byte[] data)
+    {
+        return Convert.ToBase64String(data)
+            .Replace('+', '-')
+            .Replace('/', '_')
+            .TrimEnd('=');
+    }
+
+    private static byte[] FromUrlSafeBase64(string urlSafeBase64)
+    {
+        string base64 = urlSafeBase64
+            .Replace('-', '+')
+            .Replace('_', '/');
+        
+        // Add padding if needed
+        switch (base64.Length % 4)
+        {
+            case 2: base64 += "=="; break;
+            case 3: base64 += "="; break;
+        }
+        
+        return Convert.FromBase64String(base64);
+    }
+
     public static string EncriptarString(string plainText)
     {
         KeyIvHolder keyIvHolder = GetKeyIvHolder(new ConfigurationBuilder().AddJsonFile("appsettings.json").Build());
@@ -43,7 +67,7 @@ public class EncriptacionIds
                     {
                         swEncrypt.Write(plainText);
                     }
-                    return Convert.ToBase64String(msEncrypt.ToArray());
+                    return ToUrlSafeBase64(msEncrypt.ToArray());
                 }
             }
         }
@@ -53,7 +77,7 @@ public class EncriptacionIds
     {
         KeyIvHolder keyIvHolder = GetKeyIvHolder(new ConfigurationBuilder().AddJsonFile("appsettings.json").Build());
 
-        byte[] cipherBytes = Convert.FromBase64String(cipherText);
+        byte[] cipherBytes = FromUrlSafeBase64(cipherText);
 
         using (Aes aesAlg = Aes.Create())
         {
