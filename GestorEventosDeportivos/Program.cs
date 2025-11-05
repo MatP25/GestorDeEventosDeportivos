@@ -27,6 +27,7 @@ builder.Services.AddTransient<ICarreraService , CarreraService>();
 
 builder.Services.AddSingleton<IEmailService, FakeEmailService>();
 builder.Services.AddSingleton<VerificationUserService>();
+builder.Services.AddTransient<CarrerasAPI>();
 
 // HttpContext y HttpClient
 builder.Services.AddHttpContextAccessor();
@@ -61,6 +62,9 @@ if (generadorHabilitado)
 
 // SignalR
 builder.Services.AddSignalR();
+
+// MVC Controllers
+builder.Services.AddMvc().AddControllersAsServices();
 
 //DB Context
 var conn = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -109,6 +113,7 @@ app.MapRazorComponents<App>()
 // Mapear endpoints de API
 app.MapGenerarLecturaProgresoEndpoints();
 app.MapControlGeneradorEndpoints();
+app.MapControllers();
 
 // Hub de verificación
 app.MapHub<VerificationHub>("/hubs/verification");

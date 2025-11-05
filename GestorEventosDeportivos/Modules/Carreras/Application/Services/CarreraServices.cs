@@ -109,9 +109,14 @@ public class CarreraService : ICarreraService
 
 		if (participacion is null) throw new NotFoundException("Participación no encontrada");
 
+		if (participacion.EstadoPago == nuevoEstadoPago)
+		{
+			throw new DomainRuleException("El estado de pago ya es el especificado");
+		}
+
 		participacion.EstadoPago = nuevoEstadoPago;
 		if (nuevoEstadoPago == EstadoPago.Confirmado)
-        {
+		{
 			carrera.CantidadParticipacionesPagas += 1;
         }
 

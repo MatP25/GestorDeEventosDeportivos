@@ -1,0 +1,103 @@
+@using GestorEventosDeportivos.Modules.Carreras.Application.Services
+@using GestorEventosDeportivos.Modules.Carreras.Domain.Enums
+
+@rendermode InteractiveServer
+
+@inject ICarreraService CarreraService
+@inject SweetAlertService Swal;
+
+<script src="_content/CurrieTechnologies.Razor.SweetAlert2/sweetAlert2.min.js"></script> 
+
+@if(cargando) {
+    <button class="btn btn-warning btn-sm" disabled>
+        Procesando...
+    </button>
+} else {
+    <button class="btn btn-warning btn-sm" @onclick="AceptarPagoManual">
+        Aceptar Pago Manual
+    </button>
+}
+
+
+
+@code 
+{
+    [Parameter] public Guid IdCarrera { get; set; } = Guid.Empty;
+    [Parameter] public Guid IdParticipante { get; set; } = Guid.Empty;
+    [Parameter] public string IdPago { get; set; } = string.Empty;
+    [Parameter] public string NombreParticipante { get; set; } = string.Empty;
+    [Parameter] public Action? ActualizarComponentePadre { get; set; }
+    private bool cargando;
+
+    protected override void OnInitialized()
+    {
+        cargando = false;
+    }
+
+    public async Task AceptarPagoManual() {
+        cargando = true;
+
+        bool respuesta = await AlertSolicitudConfirmacion(
+            $"¿Confirma el pago del usuario <b>{NombreParticipante}</b>?", 
+            $"Esta acción no es reversible.<br><br>Verifique que el id de pago del usuario sea el correcto:<br><b>Id de pago:<br></b><br><mark>{IdPago}</mark>");
+
+        if (!respuesta) {
+            cargando = false;
+            return;
+        }
+
+        try {
+            bool resultado = await CarreraService.ActualizarEstadoPagoParticipacion(IdCarrera, IdParticipante, EstadoPago.Confirmado);
+            if (!resultado) {
+                AlertActualizacionFallida(mensaje: "Ocurrió un error inesperado, intente de nuevo más tarde");
+            } else {
+                AlertActualizacionExitosa("Se ha confirmado el pago del participante");
+            }
+        } catch (NotFoundException ex) {
+            AlertActualizacionFallida(ex.Message); 
+        } catch (DomainRuleException ex) {
+            AlertActualizacionFallida(ex.Message); 
+        } catch (Exception) {
+            AlertActualizacionFallida(mensaje: "Ocurrió un error inesperado, intente de nuevo más tarde");
+        } finally {
+            cargando = false;
+            ActualizarComponentePadre?.Invoke();
+        }
+    }
+
+     private async Task<bool> AlertSolicitudConfirmacion(string titulo, string mensaje) {
+        SweetAlertResult? respuesta = await Swal.FireAsync(new SweetAlertOptions
+        {
+            Title = titulo,
+            Html = mensaje,
+            Icon = SweetAlertIcon.Warning,
+            ShowCancelButton = true,
+            ConfirmButtonText = "Sí, estoy seguro",
+            CancelButtonText = "Cancelar"
+        });
+
+        if (!string.IsNullOrEmpty(respuesta.Value) && respuesta.IsConfirmed) {
+            return true;
+        }
+        return false;
+    }
+
+    private async void AlertActualizacionFallida(string mensaje) {
+        await Swal.FireAsync(
+            "Error", 
+            mensaje, 
+            "error");
+    }
+
+    private async void AlertActualizacionExitosa(string mensaje) {
+        await Swal.FireAsync(new SweetAlertOptions
+        {
+            Toast = true,
+            Timer = 2000,
+            Position = "top-end",
+            Text = mensaje,
+            Icon = "success"
+        }
+        );
+    }
+}
