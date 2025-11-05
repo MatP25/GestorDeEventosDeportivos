@@ -82,6 +82,15 @@
             <dd class="col-sm-9">@PerfilData.Email</dd>
             <dt class="col-sm-3">Fecha de nacimiento</dt>
             <dd class="col-sm-9">@PerfilData.FechaNac</dd>
+            @if(IsParticipante) {
+                <dt class="col-sm-3">Identificador para pagos</dt>
+                <dd class="col-sm-9">@EncriptacionIds.EncriptarString(PerfilData.Id.ToString())</dd>
+                <details>
+                    <summary>¿Qué es este código?</summary>
+                    Si optás por pagar una inscripción mediante RedPagos, Abitab o en efectivo, un administrador te pedirá que le muestres este código cuando vayas a confirmar el pago para así verificar que sos vos.
+                </details>
+            }
+            
         </dl>
 
         @if (IsParticipante)

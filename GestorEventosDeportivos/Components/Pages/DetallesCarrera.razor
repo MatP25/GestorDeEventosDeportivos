@@ -44,7 +44,7 @@
         <GestorEventosDeportivos.Components.Pages.ChildComponents.BotonesInscripcionCarrera 
             IdEvento="@Carrera!.EventoId"
             IdCarrera="@Carrera.Id"
-            ActualizarComponentePadre="@OnEventoDeInscripcion"
+            ActualizarComponentePadre="@OnEventoDeComponenteHijo"
         />
 
         <div class="table-responsive">
@@ -54,6 +54,8 @@
                         <th>#</th>
                         <th>Participante</th>
                         @if(_usuarioEsAdmin) {
+                            <th>Id</th>
+                            <th>Acción</th>
                             <th>Estado del pago</th>
                         }
                     </tr>
@@ -66,6 +68,20 @@
                             <td>@(_pagina > 1 ? ( _tamanoPagina * (_pagina - 1) + ++Counter ) : ++Counter )</td>
                             <td>@p.Participante?.Nombre @p.Participante?.Apellido</td>
                             @if(_usuarioEsAdmin) {
+                                <td>
+                                    @EncriptacionIds.EncriptarString(p.Participante?.Id.ToString() ?? string.Empty)
+                                </td>
+                                <td>
+                                    @if(p.EstadoPago != EstadoPago.Confirmado) {
+                                        <GestorEventosDeportivos.Components.Pages.ChildComponents.BotonAceptarPagoManual
+                                            IdCarrera="@Carrera.Id"
+                                            IdParticipante="@p.Participante!.Id"
+                                            IdPago="@EncriptacionIds.EncriptarString(p.Participante?.Id.ToString() ?? string.Empty)"
+                                            NombreParticipante="@string.Concat(p.Participante?.Nombre, ' ', p.Participante?.Apellido)"
+                                            ActualizarComponentePadre="@OnEventoDeComponenteHijo"
+                                        />
+                                    }
+                                </td>
                                 <td>
                                     <span class="badge @GetEstadoPagoBadge(@p.EstadoPago)">
                                         @p.EstadoPago.ToString()
@@ -183,7 +199,7 @@
         Nav.NavigateTo("/carreras");
     }
     
-    private async void OnEventoDeInscripcion()
+    private async void OnEventoDeComponenteHijo()
     {
         await CargarPagina();
     }

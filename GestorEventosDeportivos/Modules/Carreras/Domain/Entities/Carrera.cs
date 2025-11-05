@@ -39,4 +39,3 @@ public class PuntoDeControl : BaseEntity<long>
     public Guid CarreraId { get; set; }
     public Carrera? Carrera { get; set; }
 }
-
