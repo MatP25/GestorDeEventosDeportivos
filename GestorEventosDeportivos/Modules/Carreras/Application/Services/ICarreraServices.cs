@@ -20,7 +20,7 @@ public interface ICarreraService{
     Task<PagedResult<Carrera>> ListarCarrerasPaginado(int page, int pageSize, bool ordenarAsc, IEnumerable<EstadoEvento>? estados = null);
     Task<CarreraResultados?> ObtenerResultadosCarrera(Guid carreraId);
     Task<Carrera?> ObtenerCarreraConDetalle(Guid carreraId);
-    Task<PagedResult<Participacion>> ListarParticipacionesCarreraPaginado(Guid carreraId, int page, int pageSize);
+    Task<PagedResult<Participacion>> ListarParticipacionesCarreraPaginado(Guid carreraId, int page, int pageSize, string? filtroNombre = null);
     Task<IEnumerable<Evento>> ListarEventos();
     Task<PuntoDeControl> AgregarPuntoAlaCarrera(Guid carreraId, uint posicion, string ubicacion);
     Task<Evento> RecalcularEstadoEvento(Guid eventoId);

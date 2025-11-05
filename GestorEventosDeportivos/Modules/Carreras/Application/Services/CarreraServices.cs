@@ -254,6 +254,8 @@ public class CarreraService : ICarreraService
 		};
 	}
 
+	
+
 	public async Task<CarreraResultados?> ObtenerResultadosCarrera(Guid carreraId)
 	{
 		var carrera = await _db.Carreras
@@ -344,7 +346,7 @@ public class CarreraService : ICarreraService
 		return EstadoEvento.Finalizado;
 	}
 
-	public async Task<PagedResult<Participacion>> ListarParticipacionesCarreraPaginado(Guid carreraId, int page, int pageSize)
+	public async Task<PagedResult<Participacion>> ListarParticipacionesCarreraPaginado(Guid carreraId, int page, int pageSize, string? filtroNombre = null)
 	{
 		if (page < 1) page = 1;
 		if (pageSize < 1) pageSize = 10;
@@ -365,6 +367,14 @@ public class CarreraService : ICarreraService
 			.Include(p => p.Participante)
 			.Where(p => p.EventoId == carrera.EventoId)
 			.AsNoTracking();
+
+		if (!string.IsNullOrWhiteSpace(filtroNombre) && !string.IsNullOrEmpty(filtroNombre))
+        {
+            q = q.Where(p => p.Participante != null 
+				&& EF.Functions.Like(
+					string.Concat(p.Participante.Nombre.ToLower(), " ", p.Participante.Apellido.ToLower()),
+					$"%{filtroNombre.ToLower()}%"));
+        }
 
 		// Orden por puesto (los 0 al final) y luego por número de corredor para estabilidad
 		q = q.OrderBy(p => p.Puesto == 0 ? int.MaxValue : (int)p.Puesto)

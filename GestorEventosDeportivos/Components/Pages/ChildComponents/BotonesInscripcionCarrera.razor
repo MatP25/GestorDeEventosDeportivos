@@ -209,6 +209,7 @@
             AlertActualizacionFallida("Ocurrió un error inesperado, intente de nuevo más tarde");
         } finally {
             await ActualizarComponente();
+            ActualizarComponentePadre?.Invoke();
         }
     }
 
