@@ -36,9 +36,9 @@
             Carrera="@Carrera"
         />
 
-        <h4 class="mt-4">Participantes inscriptos (@_totalElementos)</h4>
+        <h4 class="mt-4">Participantes inscriptos confirmados: (@Carrera?.CantidadParticipacionesPagas)</h4>
         @if (_registroHabilitado) {
-            <p>Hay @(Carrera?.Evento?.CapacidadParticipantes - _totalElementos) cupos disponibles.</p>
+            <p>Hay @(Carrera?.Evento?.CapacidadParticipantes - Carrera?.CantidadParticipacionesPagas) cupos disponibles.</p>
         }
         
         <GestorEventosDeportivos.Components.Pages.ChildComponents.BotonesInscripcionCarrera 
@@ -46,6 +46,29 @@
             IdCarrera="@Carrera.Id"
             ActualizarComponentePadre="@OnEventoDeComponenteHijo"
         />
+
+        @if (_usuarioEsAdmin) 
+        {
+            <div class="row g-2 align-items-end mb-4 mt-2">
+                <div class="col-auto">
+                    <label for="busqueda" class="form-label mb-0">Buscar por nombre de corredor</label>
+                    <input id="busqueda" class="form-control" type="text" maxlength="50" @bind="_inputBusqueda" placeholder="Ej: Esteban Quito" />
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-primary" @onclick="BuscarPorNombreOApellido">Buscar</button>
+                </div>
+                <div class="col-auto" hidden="@(!_filtroActivo)">
+                    <button class="btn btn-outline-secondary" @onclick="LimpiarFiltro">Limpiar</button>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(_mensajeFiltro))
+                {
+                    <div class="col-12">
+                        <small class="text-muted">@_mensajeFiltro</small>
+                    </div>
+                }
+            </div>
+        }
+        
 
         <div class="table-responsive">
             <table class="table table-sm align-middle">
@@ -62,7 +85,7 @@
                 </thead>
                 <tbody>
                     @{int Counter = 0;}
-                    @foreach (var p in Participaciones)
+                    @foreach (var p in _participaciones)
                     {
                         <tr>
                             <td>@(_pagina > 1 ? ( _tamanoPagina * (_pagina - 1) + ++Counter ) : ++Counter )</td>
@@ -116,18 +139,25 @@
     private bool cargando = true;
     private string? error;
     private Carrera? Carrera;
-    private List<Participacion> Participaciones = new();
+    private List<Participacion> _participaciones = new();
+
     private int _pagina = 1;
     private int _tamanoPagina = 10;
     private int _totalPaginas = 1;
     private int _totalElementos = 0;
     private bool _registroHabilitado;
     private bool _usuarioEsAdmin = false;
+    private string _inputBusqueda = string.Empty;
+    private bool _filtroActivo = false;
+    private string? _mensajeFiltro;
 
     protected override async Task OnInitializedAsync()
     {
         await ObtenerAutenticacion();
+        await ObtenerDetallesDeCarrera();
+    }
 
+    private async Task ObtenerDetallesDeCarrera() {
         try
         {
             cargando = true;
@@ -154,14 +184,14 @@
         }
     }
 
-    private async Task CargarPagina()
+    private async Task CargarPagina(string? filtroNombre = null)
     {
         if (Carrera is null) return;
         cargando = true;
         try
         {
-            PagedResult<Participacion>? page = await CarreraService.ListarParticipacionesCarreraPaginado(Carrera.Id, _pagina, _tamanoPagina);
-            Participaciones = page.Items.ToList();
+            PagedResult<Participacion>? page = await CarreraService.ListarParticipacionesCarreraPaginado(Carrera.Id, _pagina, _tamanoPagina, filtroNombre);
+            _participaciones = page.Items.ToList();
             _totalElementos = page.TotalCount;
             _totalPaginas = page.TotalPages;
         }
@@ -181,7 +211,7 @@
         if (_pagina > 1)
         {
             _pagina--;
-            await CargarPagina();
+            await CargarPagina(_filtroActivo ? _inputBusqueda : null);
         }
     }
 
@@ -190,7 +220,7 @@
         if (_pagina < _totalPaginas)
         {
             _pagina++;
-            await CargarPagina();
+            await CargarPagina(_filtroActivo ? _inputBusqueda : null);
         }
     }
 
@@ -201,7 +231,8 @@
     
     private async void OnEventoDeComponenteHijo()
     {
-        await CargarPagina();
+        await ObtenerDetallesDeCarrera();
+        await CargarPagina(_filtroActivo ? _inputBusqueda : null);
     }
     
     private async Task ObtenerAutenticacion() {
@@ -220,5 +251,40 @@
             EstadoPago.Confirmado => "text-bg-success",
             _ => "text-bg-light"
         };
+    }
+
+    private async Task BuscarPorNombreOApellido()
+    {
+        _mensajeFiltro = null;
+        _pagina = 1;
+
+        if (Carrera is null) return;
+        if (string.IsNullOrWhiteSpace(_inputBusqueda) || string.IsNullOrEmpty(_inputBusqueda)) {
+            _filtroActivo = false;
+            await CargarPagina(null);
+            return;
+        }
+
+        _filtroActivo = true;
+
+        await CargarPagina(_inputBusqueda.Trim());
+
+        if (_participaciones.Count > 0)
+        { 
+            _mensajeFiltro = $"Se encontraron {_participaciones.Count} resultados.";
+        } else {
+            _mensajeFiltro = $"No se encontraron resultados.";
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task LimpiarFiltro()
+    {
+        _inputBusqueda = string.Empty;
+        _mensajeFiltro = null;
+        _filtroActivo = false;
+        _pagina = 1;
+        await CargarPagina();
     }
 }
