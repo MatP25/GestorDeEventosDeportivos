@@ -1,0 +1,50 @@
+.hero-3x1 {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-3x1 > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(to top, rgba(0,0,0,.55), rgba(0,0,0,.2));
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,.6);
+  padding: 2rem;
+}
+
+.footer-dark {
+  background: #1f1f1f;
+  color: #e6e6e6;
+  box-shadow: 0 0 24px rgba(0, 0, 0, .35);
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+
+.footer-dark a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.footer-dark .btn-outline-light {
+  color: #f8f9fa;
+  border-color: rgba(255,255,255,.6);
+}
+
+.footer-dark .btn-outline-light:hover {
+  background: rgba(255,255,255,.08);
+}
+
+.popular-card {
+  border-left: 4px solid var(--bs-primary);
+}

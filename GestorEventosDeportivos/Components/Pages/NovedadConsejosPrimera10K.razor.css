@@ -1,0 +1,24 @@
+.novedades-articulo h1 {
+  letter-spacing: .5px;
+}
+
+.novedades-articulo h2 {
+  margin-top: 2.25rem;
+  scroll-margin-top: 6rem;
+}
+
+.novedades-articulo p {
+  line-height: 1.55;
+  text-align: justify;
+}
+
+.novedades-articulo article {
+  background: #fff;
+  padding: 2.25rem 2rem;
+  border-radius: .75rem;
+  box-shadow: 0 6px 24px -8px rgba(0,0,0,.15);
+}
+
+.novedades-articulo footer a {
+  margin-top: 1rem;
+}
