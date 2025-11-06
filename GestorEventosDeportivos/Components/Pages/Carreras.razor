@@ -102,9 +102,9 @@ else
 	private string? error;
 
 	private bool OrdenAsc { get; set; } = true;
-	private bool EstadoSinComenzar { get; set; } = true;
-	private bool EstadoEnCurso { get; set; } = true;
-	private bool EstadoFinalizado { get; set; } = true;
+	private bool EstadoSinComenzar { get; set; } = false;
+	private bool EstadoEnCurso { get; set; } = false;
+	private bool EstadoFinalizado { get; set; } = false;
 
 	private List<Carrera> Filtradas { get; set; } = new();
     
@@ -130,7 +130,9 @@ else
 			if (EstadoEnCurso) estados.Add(EstadoEvento.EnCurso);
 			if (EstadoFinalizado) estados.Add(EstadoEvento.Finalizado);
 
-			var pageResult = await CarreraService.ListarCarrerasPaginado(_pagina, _tamanoPagina, OrdenAsc, estados);
+			// Si no hay estados seleccionados, muestra todo pasando null
+			IEnumerable<EstadoEvento>? filtroEstados = estados.Count == 0 ? null : estados;
+			var pageResult = await CarreraService.ListarCarrerasPaginado(_pagina, _tamanoPagina, OrdenAsc, filtroEstados);
 			
 			var ordered = OrdenAsc
 				? pageResult.Items.OrderBy(c => c.Evento!.FechaInicio)
@@ -158,9 +160,9 @@ else
 
 	private async Task Limpiar()
 	{
-		EstadoSinComenzar = true;
-		EstadoEnCurso = true;
-		EstadoFinalizado = true;
+		EstadoSinComenzar = false;
+		EstadoEnCurso = false;
+		EstadoFinalizado = false;
 		OrdenAsc = true;
 		_pagina = 1;
 		await Cargar();
