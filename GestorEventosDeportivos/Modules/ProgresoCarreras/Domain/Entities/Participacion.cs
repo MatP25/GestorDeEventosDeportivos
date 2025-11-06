@@ -13,8 +13,7 @@ public class Participacion : BaseEntity<Guid>
     
     public Guid ParticipanteId { get; set; }
     public Participante? Participante { get; set; }
-
-    public uint NumeroCorredor { get; set; }
+    public uint? NumeroCorredor { get; set; }
     public uint Puesto { get; set; }
     public EstadoParticipanteEnCarrera Estado { get; set; } = EstadoParticipanteEnCarrera.SinComenzar;
     public EstadoPago EstadoPago { get; set; } = EstadoPago.NoRealizado;

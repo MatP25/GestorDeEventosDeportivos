@@ -7,7 +7,7 @@ public record DatosParticipanteDTO
     public Guid ParticipanteId { get; init; }
     public string Nombre { get; init; } = string.Empty;
     public string Apellido { get; init; } = string.Empty;
-    public uint NumeroCorredor { get; init; }
+    public uint? NumeroCorredor { get; init; }
     public uint Puesto { get; init; }
     public EstadoParticipanteEnCarrera Estado { get; init; }
 }

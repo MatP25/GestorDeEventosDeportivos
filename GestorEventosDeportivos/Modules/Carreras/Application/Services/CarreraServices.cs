@@ -6,6 +6,8 @@ using GestorEventosDeportivos.Modules.Carreras.Application.Services.DTOs;
 using GestorEventosDeportivos.Modules.ProgresoCarreras.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using GestorEventosDeportivos.Modules.Usuarios.Domain.Entities;
+using Microsoft.EntityFrameworkCore.Storage;
+using CPNum = GestorEventosDeportivos.Modules.Carreras.Domain.Entities.CPNum;
 
 namespace GestorEventosDeportivos.Modules.Carreras.Application.Services;
 
@@ -16,6 +18,58 @@ public class CarreraService : ICarreraService
 	public CarreraService(AppDbContext db)
 	{
 		_db = db;
+	}
+
+	public async Task<uint> AsignarNumeroTrasPago(Guid carreraId, Guid participanteId)
+	{
+		var carrera = await _db.Carreras.Include(c => c.Evento).FirstOrDefaultAsync(c => c.Id == carreraId);
+		if (carrera is null) throw new NotFoundException("Carrera no encontrada");
+
+		var participacion = await _db.Participaciones
+			.FirstOrDefaultAsync(p => p.EventoId == carrera.EventoId && p.ParticipanteId == participanteId);
+		if (participacion is null) throw new NotFoundException("Participación no encontrada");
+
+		if (participacion.EstadoPago != EstadoPago.Confirmado)
+			throw new DomainRuleException("El pago no está confirmado para esta participación");
+
+		if (participacion.NumeroCorredor is not null)
+			return participacion.NumeroCorredor.Value; // idempotencia
+
+		// Inicia la transaccion
+		await using var tx = await _db.Database.BeginTransactionAsync();
+
+		// Asegurar fila CPNum
+		var cp = await _db.CPNums.FirstOrDefaultAsync(x => x.CarreraId == carreraId);
+		if (cp == null)
+		{
+			// Calcular el ultimo asignado actual
+			var maxAsignado = (await _db.Participaciones
+				.Where(p => EF.Property<Guid>(p, "CarreraId") == carreraId && p.NumeroCorredor != null)
+				.Select(p => p.NumeroCorredor)
+				.MaxAsync()) ?? 0u;
+			cp = new CPNum { CarreraId = carreraId, NextNumber = maxAsignado };
+			_db.CPNums.Add(cp);
+			await _db.SaveChangesAsync();
+		}
+
+		// Incremento con control de capacidad: NextNumber < Capacidad => NextNumber = NextNumber+1
+		var capacidad = carrera.Evento!.CapacidadParticipantes;
+		var rows = await _db.Database.ExecuteSqlRawAsync(
+			"UPDATE `CPNums` SET `NextNumber` = `NextNumber` + 1 WHERE `CarreraId` = {0} AND `NextNumber` < {1};",
+			carreraId, capacidad);
+		if (rows == 0)
+		{
+			// Capacidad alcanzada
+			throw new DomainRuleException("No hay números disponibles: capacidad alcanzada para esta carrera");
+		}
+
+		// Obtener el valor asignado (ultimo)
+		var asignado = await _db.CPNums.Where(x => x.CarreraId == carreraId).Select(x => x.NextNumber).FirstAsync();
+
+		participacion.NumeroCorredor = asignado;
+		await _db.SaveChangesAsync();
+		await tx.CommitAsync();
+		return asignado;
 	}
 
 	public async Task<Evento> CrearEvento(string nombre, DateTime fechaInicio, uint Capacidad, string Ubicacion)
@@ -79,7 +133,7 @@ public class CarreraService : ICarreraService
 		{
 			EventoId = eventoId,
 			ParticipanteId = participanteId,
-			NumeroCorredor = 0,
+			NumeroCorredor = null,
 			Puesto = 0,
 			Estado = EstadoParticipanteEnCarrera.SinComenzar,
 			Progreso = new Dictionary<uint, TimeSpan> { }
@@ -377,8 +431,8 @@ public class CarreraService : ICarreraService
         }
 
 		// Orden por puesto (los 0 al final) y luego por número de corredor para estabilidad
-		q = q.OrderBy(p => p.Puesto == 0 ? int.MaxValue : (int)p.Puesto)
-			 .ThenBy(p => p.NumeroCorredor);
+	   q = q.OrderBy(p => p.Puesto == 0 ? int.MaxValue : (int)p.Puesto)
+		   .ThenBy(p => p.NumeroCorredor == null ? uint.MaxValue : p.NumeroCorredor.Value);
 
 		var total = await q.CountAsync();
 		var items = await q.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
