@@ -1,0 +1,108 @@
+@page "/novedades/consejos-primera-10k"
+@rendermode InteractiveServer
+
+<title>Consejos para tu primera 10K</title>
+
+<div class="container my-5 novedades-articulo" id="top">
+  <article class="mx-auto" style="max-width: 900px;">
+    <header class="mb-4">
+      <h1 class="display-6 fw-semibold">Consejos para tu primera carrera de 10K</h1>
+      <p class="text-secondary m-0">Guía práctica para disfrutar y completar tu debut con buena energía.</p>
+    </header>
+
+    <section class="mb-4">
+      <p>
+        Ha llegado tu momento. El momento de debutar en una carrera de 10 kilómetros. Es una distancia que marca un ‘antes y un después’ para muchos corredores; una primera barrera seria que implica esfuerzo y dedicación para superarla.
+      </p>
+      <p>
+        Entendemos que ya te has entrenado lo suficiente y tienes tu dorsal puesto. Las horas que le has dedicado a prepararte para esta carrera tienen que dar su fruto. Ahora, a por ella. No cometas errores y enfréntate con inteligencia a esta prueba. El principal consejo: <strong>disfruta de la experiencia</strong>. Asegúrate de que el recuerdo sea bueno.
+      </p>
+    </section>
+
+    <section class="mb-4">
+      <h2 class="h4">Gestión del ritmo</h2>
+      <p>
+        Ojo con esto. En los debuts es mejor ser conservador. Es preferible acabar bien y tener un gran recuerdo que quedarse sin aire a mitad de carrera. No aceleres el ritmo previsto aunque a mitad te sientas fuerte. Mantén tu plan y reserva energías para los últimos kilómetros.
+      </p>
+    </section>
+
+    <section class="mb-4">
+      <h2 class="h4">La salida y el efecto dorsal</h2>
+      <p>
+        La música, los ánimos del público y los demás corredores generan euforia. Este momento es clave: si sales demasiado rápido, puede pasarte factura. Respira, controla y disfruta sin desbordarte. Tu objetivo es llegar sólido al final, no volar en el primer kilómetro.
+      </p>
+    </section>
+
+    <section class="mb-4">
+      <h2 class="h4">El "muro" en una 10K</h2>
+      <p>
+        También existe (a pequeña escala). Si vienes de entrenamientos más cortos, alrededor del kilómetro 8 tu cuerpo puede empezar a flaquear. Anticípalo: guarda fuerzas mentales y físicas para superar ese tramo. Recuerda: es normal que cueste, no significa que hayas hecho algo mal.
+      </p>
+    </section>
+
+    <section class="mb-4">
+      <h2 class="h4">Reconocer el recorrido</h2>
+      <p>
+        No hace falta memorizarlo al detalle, pero sí haberlo estudiado. Saber qué zonas vienen, dónde hay posibles cuestas, curvas o tramos estrechos te da seguridad. La información es poder y reduce incertidumbre.
+      </p>
+    </section>
+
+    <section class="mb-4">
+      <h2 class="h4">Alimentación e hidratación previa</h2>
+      <p>
+        Trabaja la hidratación desde días antes. Controla la alimentación del día previo y el desayuno de carrera: energía suficiente y sin experimentos. Mantén lo que has usado en tus entrenamientos largos. Evita alimentos muy ricos en fibra las horas previas si suelen caerte pesados.
+      </p>
+    </section>
+
+    <section class="mb-4">
+      <h2 class="h4">Avituallamiento</h2>
+      <p>
+        Probablemente haya un único avituallamiento sobre el kilómetro 5. No lo ignores: toma líquido a sorbos pequeños si no tienes costumbre. Si estás habituado, hazlo como siempre. Te ayuda a mantenerte estable hasta la meta.
+      </p>
+    </section>
+
+    <section class="mb-4">
+      <h2 class="h4">Público, ánimos y emociones</h2>
+      <p>
+        Son parte fundamental de la experiencia. Absorbe lo que ocurre a tu alrededor: los ánimos son energía gratis. Focaliza en sensaciones positivas y deja que te impulsen. La carrera está llena de micro-momentos emocionantes; aprovéchalos para motivarte.
+      </p>
+    </section>
+
+    <section class="mb-4">
+      <h2 class="h4">Evita la obsesión</h2>
+      <p>
+        Respeto sí, obsesión no. No pienses en la carrera absolutamente todo el día: tu mente necesita descanso. Los días previos ya tienes el trabajo hecho; confía en tu preparación, distrae la mente y reduce tensión.
+      </p>
+    </section>
+
+    <section class="mb-4">
+      <h2 class="h4">Descanso, primordial</h2>
+      <p>
+        Llega descansado a la línea de salida. Las 48 horas previas evita cargar las piernas con entrenos duros. Dormir bien y hacer sesiones muy suaves te da más beneficios que intentar “rematar” el entrenamiento. A estas alturas ya estás listo.
+      </p>
+    </section>
+
+    <section class="mb-5">
+      <h2 class="h4">El recuerdo: tu foto final</h2>
+      <p>
+        ¡Claro que sí! Tener una buena foto cruzando la meta es un recuerdo que vale oro. Prepárate para disfrutar ese momento. Sonríe, levanta los brazos, celebra tu logro: será la imagen de tu “antes y después”.
+      </p>
+    </section>
+
+    <footer class="text-center text-secondary small">
+      <a class="btn btn-outline-secondary" href="/">Volver al inicio</a>
+    </footer>
+  </article>
+</div>
+
+@inject IJSRuntime JS
+
+@code {
+  protected override async Task OnAfterRenderAsync(bool firstRender)
+  {
+    if (firstRender)
+    {
+      await JS.InvokeVoidAsync("window.scrollTo", 0, 0);
+    }
+  }
+}

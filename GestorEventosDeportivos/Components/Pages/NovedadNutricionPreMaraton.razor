@@ -1,0 +1,90 @@
+@page "/novedades/nutricion-pre-maraton"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components
+
+<title>Nutrición previa a una maratón</title>
+
+<div class="container my-5 novedades-articulo" id="top">
+  <article class="mx-auto" style="max-width: 900px;">
+    <header class="mb-4">
+      <h1 class="display-6 fw-semibold">Nutrición previa a una maratón</h1>
+      <p class="text-secondary m-0">Recomendaciones prácticas para llegar con energía a la largada.</p>
+    </header>
+
+    <section class="mb-4">
+      <p>
+        Comer antes de una maratón es casi tan importante como entrenarse para ella. De hecho, tu dieta influye mucho en tu rendimiento como corredor.
+        Una semana antes, de repente empiezas a preguntarte todo tipo de cosas. ¿Qué debo comer mejor antes del maratón? ¿Cuándo empiezo a acumular carbohidratos para el maratón? A continuación, todas las respuestas.
+      </p>
+    </section>
+
+    <section class="mb-4">
+      <h2 class="h4">Comer para el maratón: de 5 a 7 días antes</h2>
+      <p>
+        Durante el programa completo de entrenamiento previo al maratón, los músculos apenas tienen la oportunidad de recargarse completamente de glucógeno. Por esta razón, es aconsejable reducir el entrenamiento antes de una maratón. De este modo, dará a sus músculos la oportunidad de almacenar reservas de energía para el maratón, así como un merecido descanso.
+      </p>
+      <p>
+        ¿Qué comer la última semana antes de un maratón? Sobre todo, muchos hidratos de carbono. Para un maratón o un medio maratón, ingiere unos 6 gramos de hidratos de carbono por kilogramo de peso corporal en esos días, repartidos a lo largo del día. Así, si pesas 75 kg, por ejemplo, necesitarás 6 x 75 = 450 gramos de carbohidratos.
+      </p>
+    </section>
+
+    <section class="mb-4">
+      <h2 class="h4">3-4 días antes del maratón: acumulación de carbohidratos</h2>
+      <p>
+        La ingesta de carbohidratos antes de un maratón es cada vez más importante a medida que se acerca la carrera. Los últimos 3 ó 4 días, empieza a acumular hidratos de carbono antes del maratón. Para ello, aumenta tu ingesta de carbohidratos a 7 u 8 gramos de carbohidratos por kilo de peso corporal.
+      </p>
+      <p>
+        Preferiblemente (hasta dos días antes de la carrera) opta por carbohidratos lentos como el boniato o la avena. No tengas miedo de ganar un poco de peso si es necesario, porque al retener glucógeno almacenarás líquido extra. Esto se notará en la báscula, pero después volverás a perderlo.
+      </p>
+    </section>
+
+    <section class="mb-4">
+      <h2 class="h4">¿Qué comer la noche antes del maratón?</h2>
+      <p>
+        Deja de comer alimentos ricos en fibra , como salvado, cereales integrales y grandes cantidades de verduras ricas en fibra, dos días antes de su maratón. Prefiere comer la variedad blanca de pan y pasta los días y la noche antes del maratón. Una dieta baja en fibra hará que tus intestinos estén menos estresados durante la carrera.
+      </p>
+    </section>
+
+    <section class="mb-4">
+      <h2 class="h4">De 2 a 4 horas antes del maratón: impulso final</h2>
+      <p>
+        Una buena comida premaratón consiste en añadir carbohidratos extra para dar un último empujón a tus reservas de glucógeno. Y principalmente el suministro de glucógeno de tu hígado, que te ayudará a mantener estable el azúcar en sangre durante toda la carrera. Toma entre 1 y 2 gramos de carbohidratos por kilo de peso corporal. Come sólo 2 gramos por kilo de peso corporal si aún tienes 4 horas para digerirlo. Intenta comer la menor cantidad de grasa posible y un máximo de 15 gramos de proteínas.
+      </p>
+      <p>
+        El día de la carrera no es un día para experimentar, así que elije productos a los que estés acostumbrado, tolera bien y con los que ya hayas hecho ejercicio durante tus carreras largas de resistencia. Es mejor elegir carbohidratos rápidos, como plátano, pan blanco y miel.
+      </p>
+    </section>
+
+    <section class="mb-4">
+      <h2 class="h4">Comer durante el maratón</h2>
+      <p>
+        Si todo va bien, en las semanas previas al maratón habrás comprobado qué alimentos toleras mejor mientras corres. Por lo tanto, lleva la misma alimentación durante la carrera. Come al menos de 30 a 60 gramos y un máximo de 90 a 100 gramos de carbohidratos por hora. Elige hidratos de carbono que absorbas rápidamente, como los azúcares. Piensa en un gel, un plátano, una barrita y una bebida deportiva. Intenta repartir la ingesta a lo largo de los kilómetros. Bebe lo suficiente (incluyendo electrolitos), pero sin excederte. Cuando hace frío se pierde menos líquido por el sudor, mientras que cuando hace calor se pierde más.
+      </p>
+    </section>
+
+    <section class="mb-5">
+      <h2 class="h4">Tomar cafeína durante el maratón</h2>
+      <p>
+        ¿Te sientes un poco débil durante la carrera? Toma un poco de cafeína en forma de chicle o bebida deportiva con cafeína añadida. Una pequeña cantidad de cafeína puede darte el empujón que necesitas. A mucha gente también le gusta tomar geles energéticos sobre la marcha. 
+      </p>
+    </section>
+
+    <footer class="text-center text-secondary small">
+      <a class="btn btn-outline-secondary" href="/">Volver al inicio</a>
+    </footer>
+  </article>
+</div>
+
+@inject IJSRuntime JS
+
+@code {
+  protected override async Task OnAfterRenderAsync(bool firstRender)
+  {
+    if (firstRender)
+    {
+      await JS.InvokeVoidAsync("window.scrollTo", 0, 0);
+    }
+  }
+}

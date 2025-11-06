@@ -1,13 +1,215 @@
 ﻿@page "/"
-@using GestorEventosDeportivos.Modules.ProgresoCarreras.Application
-@using GestorEventosDeportivos.Modules.ProgresoCarreras.Datatypes
+@using GestorEventosDeportivos.Modules.Carreras.Application.Services
+@using GestorEventosDeportivos.Modules.Carreras.Domain.Entities
+@using GestorEventosDeportivos.Modules.Carreras.Domain.Enums
 
 @rendermode InteractiveServer
 
-@inject IProgresoService progresoService
+@inject ICarreraService CarreraService
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Inicio</PageTitle>
 
-<h1>Hello, world!</h1>
+<section class="hero-3x1">
+	<img src="/images/HomeImage.webp" alt="Imagen principal" />
+	<div class="hero-overlay">
+		<div class="container text-center">
+			<h1 class="display-6 fw-semibold mb-3">Gestiona tus inscripciones y resultados en un solo lugar</h1>
+			<a href="/carreras" class="btn btn-primary btn-lg shadow">Explorar carreras</a>
+		</div>
+	</div>
+</section>
 
-Welcome to your new app.
+<!-- Proximos eventos -->
+<section class="container my-5">
+	<div class="d-flex justify-content-between align-items-center mb-3">
+		<h2 class="h4 m-0">Próximos eventos</h2>
+		<a class="btn btn-link" href="/carreras">Ver todos</a>
+	</div>
+	@if (ProximosEventos.Count == 0)
+	{
+		<p class="text-muted">No hay eventos próximos por el momento.</p>
+	}
+	else
+	{
+		<div class="row row-cols-1 row-cols-md-3 g-3">
+			@foreach (var c in ProximosEventos)
+			{
+				<div class="col">
+					<div class="card h-100 shadow-sm">
+						<div class="card-body d-flex flex-column">
+							<h5 class="card-title">@c.Evento!.Nombre</h5>
+							<p class="card-text text-secondary mb-1">@c.Evento!.Ubicacion</p>
+							<p class="card-text text-secondary mb-2">@c.Evento!.FechaInicio:dd/MM/yyyy HH:mm</p>
+							<div class="mt-auto d-flex justify-content-between align-items-center">
+								<span class="badge text-bg-info">Cupos: @CuposDisponibles(c) disponibles</span>
+								<a class="btn btn-outline-primary" href="/carreras/@c.Id/detalles">Ver detalles</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			}
+		</div>
+	}
+</section>
+
+<!-- Eventos con pocos cupos -->
+<section class="container my-5">
+	<div class="d-flex justify-content-between align-items-center mb-3">
+		<h2 class="h4 m-0">Eventos con pocos cupos</h2>
+	</div>
+	@if (PocosCupos.Count == 0)
+	{
+		<p class="text-muted">No hay eventos con cupos críticos en este momento.</p>
+	}
+	else
+	{
+		<div class="row row-cols-1 row-cols-md-3 g-3">
+			@foreach (var c in PocosCupos)
+			{
+				var restantes = CuposDisponibles(c);
+				var capacidad = (int)(c.Evento!.CapacidadParticipantes);
+				<div class="col">
+					<div class="card h-100 shadow-sm border-warning">
+						<div class="card-body d-flex flex-column">
+							<div class="d-flex justify-content-between align-items-start">
+								<h5 class="card-title">@c.Evento!.Nombre</h5>
+								<span class="badge text-bg-warning">¡Últimos cupos disponibles!</span>
+							</div>
+							<p class="card-text text-secondary mb-1">@c.Evento!.Ubicacion</p>
+							<p class="card-text text-secondary mb-2">@c.Evento!.FechaInicio:dd/MM/yyyy HH:mm</p>
+							<div class="mt-auto d-flex justify-content-between align-items-center">
+								<span class="badge text-bg-danger">Quedan @restantes / @capacidad</span>
+								<a class="btn btn-outline-primary" href="/carreras/@c.Id/detalles">Ver detalles</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			}
+		</div>
+	}
+</section>
+
+<!-- Carreras populares -->
+<section class="container my-5">
+	<div class="d-flex justify-content-between align-items-center mb-3">
+		<h2 class="h4 m-0">Carreras populares</h2>
+	</div>
+	@if (Populares.Count == 0)
+	{
+		<p class="text-muted">Todavía no hay carreras populares.</p>
+	}
+	else
+	{
+		<div class="row row-cols-1 row-cols-md-3 g-3">
+			@foreach (var c in Populares)
+			{
+				<div class="col">
+					<div class="card h-100 shadow-sm popular-card">
+						<div class="card-body d-flex flex-column">
+							<div class="d-flex justify-content-between align-items-start mb-2">
+								<h5 class="card-title mb-0">@c.Evento!.Nombre</h5>
+								<span class="badge text-bg-primary">@c.CantidadParticipacionesPagas inscriptos</span>
+							</div>
+							<p class="card-text text-secondary mb-1">@c.Evento!.Ubicacion</p>
+							<p class="card-text text-secondary mb-2">@c.Evento!.FechaInicio:dd/MM/yyyy HH:mm</p>
+							<div class="mt-auto d-flex justify-content-between align-items-center">
+								<span class="badge text-bg-secondary">Estado: @c.Evento!.EstadoEvento</span>
+								<a class="btn btn-outline-primary" href="/carreras/@c.Id/detalles">Ver detalles</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			}
+		</div>
+	}
+</section>
+
+<!-- Novedades deportivas -->
+<section class="container my-5">
+	<div class="d-flex justify-content-between align-items-center mb-3">
+		<h2 class="h4 m-0">Novedades deportivas</h2>
+	</div>
+	<div class="row row-cols-1 row-cols-md-3 g-3">
+		@foreach (var post in Novedades)
+		{
+			<div class="col">
+				<div class="card h-100 shadow-sm">
+					<div class="card-body d-flex flex-column">
+						<h5 class="card-title">@post.Titulo</h5>
+						<p class="card-text text-secondary">@post.Resumen</p>
+						<a class="mt-auto btn btn-sm btn-outline-secondary" href="/novedades/@post.Slug">Leer más</a>
+					</div>
+				</div>
+			</div>
+		}
+	</div>
+</section>
+
+<!-- Footer -->
+<footer class="footer-dark mt-5 py-4">
+	<div class="container d-flex flex-column flex-md-row justify-content-between align-items-start gap-3">
+		<div>
+			<h5 class="mb-2">Contacto</h5>
+			<p class="mb-1">Email: soporte@gestoreventos.com</p>
+			<p class="mb-0">Tel: +598 92 999 999</p>
+		</div>
+		<div>
+			<h5 class="mb-2">Síguenos</h5>
+			<div class="d-flex gap-2">
+				<a class="btn btn-sm btn-outline-light" href="#">Twitter</a>
+				<a class="btn btn-sm btn-outline-light" href="#">Instagram</a>
+				<a class="btn btn-sm btn-outline-light" href="#">Facebook</a>
+			</div>
+		</div>
+	</div>
+</footer>
+
+@code {
+	private List<Carrera> _todas = new();
+	protected List<Carrera> ProximosEventos { get; set; } = new();
+	protected List<Carrera> PocosCupos { get; set; } = new();
+	protected List<Carrera> Populares { get; set; } = new();
+
+	protected List<(string Titulo, string Resumen, string Slug)> Novedades { get; set; } = new()
+	{
+		("Consejos para tu primera 10K", "Cómo preparar tus semanas previas para llegar con confianza a la largada.", "consejos-primera-10k"),
+		("Nutrición previa a una maratón", "Qué comer los días anteriores y el mismo día para rendir al máximo.", "nutricion-pre-maraton"),
+		("Entrenamiento cruzado", "Mejora tu rendimiento combinando fuerza, técnica y resistencia.", "entrenamiento-cruzado"),
+	};
+
+	protected override async Task OnInitializedAsync()
+	{
+		var carreras = await CarreraService.ListarCarreras();
+		_todas = carreras.Where(c => c.Evento != null).ToList();
+
+		// Proximos eventos: sin comenzar, ordenados por fecha, hasta 6
+		ProximosEventos = _todas
+			.Where(c => c.Evento!.EstadoEvento == EstadoEvento.SinComenzar)
+			.OrderBy(c => c.Evento!.FechaInicio)
+			.Take(6)
+			.ToList();
+
+		// Eventos con pocos cupos: sin comenzar y con menos del 35% de cupos disponibles
+		PocosCupos = _todas
+			.Where(c => c.Evento!.EstadoEvento == EstadoEvento.SinComenzar && CuposDisponibles(c) < (int)(c.Evento!.CapacidadParticipantes * 0.35))
+			.OrderBy(c => CuposDisponibles(c))
+			.Take(6)
+			.ToList();
+
+		// Populares: basado en mas inscriptos (sin comenzar o en curso), top 6
+		Populares = _todas
+			.Where(c => c.Evento!.EstadoEvento == EstadoEvento.SinComenzar || c.Evento!.EstadoEvento == EstadoEvento.EnCurso)
+			.OrderByDescending(c => c.CantidadParticipacionesPagas)
+			.ThenBy(c => c.Evento!.FechaInicio)
+			.Take(6)
+			.ToList();
+	}
+
+	private int CuposDisponibles(Carrera c)
+	{
+		var capacidad = (int)(c.Evento?.CapacidadParticipantes ?? 0);
+		var pagas = (int)c.CantidadParticipacionesPagas;
+		var resto = capacidad - pagas;
+		return resto < 0 ? 0 : resto;
+	}
+}
