@@ -39,7 +39,7 @@
 						<div class="card-body d-flex flex-column">
 							<h5 class="card-title">@c.Evento!.Nombre</h5>
 							<p class="card-text text-secondary mb-1">@c.Evento!.Ubicacion</p>
-							<p class="card-text text-secondary mb-2">@c.Evento!.FechaInicio:dd/MM/yyyy HH:mm</p>
+							<p class="card-text text-secondary mb-2">@c.Evento!.FechaInicio</p>
 							<div class="mt-auto d-flex justify-content-between align-items-center">
 								<span class="badge text-bg-info">Cupos: @CuposDisponibles(c) disponibles</span>
 								<a class="btn btn-outline-primary" href="/carreras/@c.Id/detalles">Ver detalles</a>
@@ -76,7 +76,7 @@
 								<span class="badge text-bg-warning">¡Últimos cupos disponibles!</span>
 							</div>
 							<p class="card-text text-secondary mb-1">@c.Evento!.Ubicacion</p>
-							<p class="card-text text-secondary mb-2">@c.Evento!.FechaInicio:dd/MM/yyyy HH:mm</p>
+							<p class="card-text text-secondary mb-2">@c.Evento!.FechaInicio</p>
 							<div class="mt-auto d-flex justify-content-between align-items-center">
 								<span class="badge text-bg-danger">Quedan @restantes / @capacidad</span>
 								<a class="btn btn-outline-primary" href="/carreras/@c.Id/detalles">Ver detalles</a>
@@ -111,7 +111,7 @@
 								<span class="badge text-bg-primary">@c.CantidadParticipacionesPagas inscriptos</span>
 							</div>
 							<p class="card-text text-secondary mb-1">@c.Evento!.Ubicacion</p>
-							<p class="card-text text-secondary mb-2">@c.Evento!.FechaInicio:dd/MM/yyyy HH:mm</p>
+							<p class="card-text text-secondary mb-2">@c.Evento!.FechaInicio</p>
 							<div class="mt-auto d-flex justify-content-between align-items-center">
 								<span class="badge text-bg-secondary">Estado: @c.Evento!.EstadoEvento</span>
 								<a class="btn btn-outline-primary" href="/carreras/@c.Id/detalles">Ver detalles</a>
