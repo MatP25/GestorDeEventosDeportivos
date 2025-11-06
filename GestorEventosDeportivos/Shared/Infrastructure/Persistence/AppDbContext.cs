@@ -19,6 +19,7 @@ public class AppDbContext : DbContext
     public DbSet<Carrera> Carreras => Set<Carrera>();
     public DbSet<PuntoDeControl> PuntosDeControl => Set<PuntoDeControl>();
     public DbSet<Participacion> Participaciones => Set<Participacion>();
+    public DbSet<GestorEventosDeportivos.Modules.Carreras.Domain.Entities.CPNum> CPNums => Set<GestorEventosDeportivos.Modules.Carreras.Domain.Entities.CPNum>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -64,5 +65,9 @@ public class AppDbContext : DbContext
                     c => c.Aggregate(0, (a, kvp) => HashCode.Combine(a, kvp.Key.GetHashCode(), kvp.Value.GetHashCode())),
                     c => c.ToDictionary(kvp => kvp.Key, kvp => kvp.Value))
             );
+
+        // CPNum config: PK = CarreraId
+        modelBuilder.Entity<GestorEventosDeportivos.Modules.Carreras.Domain.Entities.CPNum>()
+            .HasKey(x => x.CarreraId);
     }
 }

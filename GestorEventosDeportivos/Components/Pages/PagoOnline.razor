@@ -198,7 +198,17 @@
         try {
             bool resultado = await CarreraService.ActualizarEstadoPagoParticipacion(IdCarrera, idUsuario, EstadoPago.Confirmado);
             if (resultado) {
-                AlertPagoExitoso();
+                // Asigna el numero de corredor tras confirmar pago
+                try
+                {
+                    var numero = await CarreraService.AsignarNumeroTrasPago(IdCarrera, idUsuario);
+                    await AlertPagoExitoso(numero);
+                }
+                catch (Exception ex)
+                {
+                    // Si falla la asignacion del numero, avisa pero no revierte el pago
+                    await Swal.FireAsync("Pago Confirmado", $"El pago fue confirmado pero no se pudo asignar el número: {ex.Message}", "warning");
+                }
             }
         } catch (NotFoundException ex) {
             AlertPagoFallido(ex.Message);
@@ -242,11 +252,15 @@
             "error");
     }
 
-    private async void AlertPagoExitoso() {
+    private async Task AlertPagoExitoso(uint? numeroCorredor = null) {
+        string texto = numeroCorredor is null
+            ? "Su inscripción ha sido confirmada exitosamente" 
+            : $"Su inscripción ha sido confirmada. Su número de corredor es : {numeroCorredor}";
+
         await Swal.FireAsync(new SweetAlertOptions
         {
             Title = "Pago Confirmado",
-            Text = "Su inscripción ha sido confirmada exitosamente",
+            Text = texto,
             Icon = SweetAlertIcon.Success,
             ConfirmButtonText = "Aceptar",
         }).ContinueWith( _ => 

@@ -443,7 +443,7 @@ public class InitData
                     {
                         EventoId = carrera2.Entity.EventoId,
                         ParticipanteId = participante1.Entity.Id,
-                        NumeroCorredor = 0,
+                        NumeroCorredor = null,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
                         Progreso = new Dictionary<uint, TimeSpan> { },
@@ -455,7 +455,7 @@ public class InitData
                     {
                         EventoId = carrera2.Entity.EventoId,
                         ParticipanteId = participante2.Entity.Id,
-                        NumeroCorredor = 0,
+                        NumeroCorredor = null,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
                         Progreso = new Dictionary<uint, TimeSpan> { },
@@ -467,7 +467,7 @@ public class InitData
                     {
                         EventoId = carrera2.Entity.EventoId,
                         ParticipanteId = participante3.Entity.Id,
-                        NumeroCorredor = 0,
+                        NumeroCorredor = null,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
                         Progreso = new Dictionary<uint, TimeSpan> { },
@@ -568,7 +568,7 @@ public class InitData
                     {
                         EventoId = carrera5.Entity.EventoId,
                         ParticipanteId = participante1.Entity.Id,
-                        NumeroCorredor = 0,
+                        NumeroCorredor = null,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
                         Progreso = new Dictionary<uint, TimeSpan> { },
@@ -580,7 +580,7 @@ public class InitData
                     {
                         EventoId = carrera5.Entity.EventoId,
                         ParticipanteId = participante2.Entity.Id,
-                        NumeroCorredor = 0,
+                        NumeroCorredor = null,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.EnCurso,
                         Progreso = new Dictionary<uint, TimeSpan> { },
@@ -592,7 +592,7 @@ public class InitData
                     {
                         EventoId = carrera5.Entity.EventoId,
                         ParticipanteId = participante3.Entity.Id,
-                        NumeroCorredor = 0,
+                        NumeroCorredor = null,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
                         Progreso = new Dictionary<uint, TimeSpan> { },
@@ -604,7 +604,7 @@ public class InitData
                     {
                         EventoId = carrera5.Entity.EventoId,
                         ParticipanteId = participante4.Entity.Id,
-                        NumeroCorredor = 0,
+                        NumeroCorredor = null,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
                         Progreso = new Dictionary<uint, TimeSpan> { },
@@ -616,7 +616,7 @@ public class InitData
                     {
                         EventoId = carrera5.Entity.EventoId,
                         ParticipanteId = participante5.Entity.Id,
-                        NumeroCorredor = 0,
+                        NumeroCorredor = null,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
                         Progreso = new Dictionary<uint, TimeSpan> { },
@@ -628,7 +628,7 @@ public class InitData
                     {
                         EventoId = carrera5.Entity.EventoId,
                         ParticipanteId = participante6.Entity.Id,
-                        NumeroCorredor = 0,
+                        NumeroCorredor = null,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
                         Progreso = new Dictionary<uint, TimeSpan> { },
@@ -640,7 +640,7 @@ public class InitData
                     {
                         EventoId = carrera5.Entity.EventoId,
                         ParticipanteId = participante7.Entity.Id,
-                        NumeroCorredor = 0,
+                        NumeroCorredor = null,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
                         Progreso = new Dictionary<uint, TimeSpan> { },
@@ -652,7 +652,7 @@ public class InitData
                     {
                         EventoId = carrera5.Entity.EventoId,
                         ParticipanteId = participante8.Entity.Id,
-                        NumeroCorredor = 0,
+                        NumeroCorredor = null,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
                         Progreso = new Dictionary<uint, TimeSpan> { },
@@ -664,7 +664,7 @@ public class InitData
                     {
                         EventoId = carrera5.Entity.EventoId,
                         ParticipanteId = participante9.Entity.Id,
-                        NumeroCorredor = 0,
+                        NumeroCorredor = null,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
                         Progreso = new Dictionary<uint, TimeSpan> { },
@@ -676,7 +676,7 @@ public class InitData
                     {
                         EventoId = carrera5.Entity.EventoId,
                         ParticipanteId = participante10.Entity.Id,
-                        NumeroCorredor = 0,
+                        NumeroCorredor = null,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
                         Progreso = new Dictionary<uint, TimeSpan> { },
@@ -688,7 +688,7 @@ public class InitData
                     {
                         EventoId = carrera5.Entity.EventoId,
                         ParticipanteId = participante11.Entity.Id,
-                        NumeroCorredor = 0,
+                        NumeroCorredor = null,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
                         Progreso = new Dictionary<uint, TimeSpan> { },
@@ -700,7 +700,7 @@ public class InitData
                     {
                         EventoId = carrera5.Entity.EventoId,
                         ParticipanteId = participante12.Entity.Id,
-                        NumeroCorredor = 0,
+                        NumeroCorredor = null,
                         Puesto = 0,
                         Estado = EstadoParticipanteEnCarrera.SinComenzar,
                         Progreso = new Dictionary<uint, TimeSpan> { },

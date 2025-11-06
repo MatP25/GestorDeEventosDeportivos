@@ -26,4 +26,5 @@ public interface ICarreraService{
     Task<Evento> RecalcularEstadoEvento(Guid eventoId);
     Task<IEnumerable<Participacion>> ListarParticipacionesDeUsuario(Guid usuarioId);
     Task<bool> ActualizarEstadoPagoParticipacion(Guid carreraId, Guid participanteId, EstadoPago nuevoEstadoPago);
+    Task<uint> AsignarNumeroTrasPago(Guid carreraId, Guid participanteId);
 }
