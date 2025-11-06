@@ -38,7 +38,7 @@ public class CarreraService : ICarreraService
 		// Inicia la transaccion
 		await using var tx = await _db.Database.BeginTransactionAsync();
 
-		// Asegurar fila CPNum
+		// Asegurar fila CPNum (contador) existente e inicializado
 		var cp = await _db.CPNums.FirstOrDefaultAsync(x => x.CarreraId == carreraId);
 		if (cp == null)
 		{
@@ -52,21 +52,37 @@ public class CarreraService : ICarreraService
 			await _db.SaveChangesAsync();
 		}
 
-		// Incremento con control de capacidad: NextNumber < Capacidad => NextNumber = NextNumber+1
+		// Candado logico por carrera: bloquear fila CPNum para serializar la asignacion utilizando un select.. for update sobre la fila CPNums
+		await _db.Database.ExecuteSqlRawAsync(
+			"SELECT `CarreraId` FROM `CPNums` WHERE `CarreraId` = {0} FOR UPDATE;",
+			carreraId);
+
+		// Leer numeros ya asignados en la carrera
+		var asignados = await _db.Participaciones
+			.Where(p => EF.Property<Guid>(p, "CarreraId") == carreraId && p.NumeroCorredor != null)
+			.Select(p => p.NumeroCorredor!.Value)
+			.ToListAsync();
+
 		var capacidad = carrera.Evento!.CapacidadParticipantes;
-		var rows = await _db.Database.ExecuteSqlRawAsync(
-			"UPDATE `CPNums` SET `NextNumber` = `NextNumber` + 1 WHERE `CarreraId` = {0} AND `NextNumber` < {1};",
-			carreraId, capacidad);
-		if (rows == 0)
-		{
-			// Capacidad alcanzada
+		if (asignados.Count >= capacidad)
 			throw new DomainRuleException("No hay números disponibles: capacidad alcanzada para esta carrera");
+
+		// Buscar el menor numero libre 
+		var ocupados = new HashSet<uint>(asignados);
+		uint asignado = 1;
+		for (uint i = 1; i <= capacidad; i++)
+		{
+			if (!ocupados.Contains(i)) { asignado = i; break; }
 		}
 
-		// Obtener el valor asignado (ultimo)
-		var asignado = await _db.CPNums.Where(x => x.CarreraId == carreraId).Select(x => x.NextNumber).FirstAsync();
-
+		// Asignar y persistir
 		participacion.NumeroCorredor = asignado;
+
+		if (asignado > cp.NextNumber)
+		{
+			cp.NextNumber = asignado;
+		}
+
 		await _db.SaveChangesAsync();
 		await tx.CommitAsync();
 		return asignado;
@@ -197,6 +213,12 @@ public class CarreraService : ICarreraService
 
 		if (carrera.Evento!.EstadoEvento == EstadoEvento.Finalizado || carrera.Evento.EstadoEvento == EstadoEvento.EnCurso)
 			throw new DomainRuleException("No se puede desinscribir un participante de una carrera en curso o finalizada");
+
+		// Liberar el dorsal aunque el remove ya lo libera, solo por precaucion)
+		if (participacion.NumeroCorredor is not null)
+		{
+			participacion.NumeroCorredor = null;
+		}
 
 		_db.Participaciones.Remove(participacion);
 		participante.Carreras.Remove(participacion);
