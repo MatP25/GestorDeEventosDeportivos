@@ -79,35 +79,56 @@ public class ProgresoServices : IProgresoService
 
     public async Task IngresarLecturaPuntoDeControl(Guid carreraId, Guid participanteId, uint puntoDeControlPosicion, TimeSpan tiempo)
     {
-        Participacion? participacion = await _context.Participaciones.FirstOrDefaultAsync(p => p.EventoId == carreraId && p.ParticipanteId == participanteId);
+        // Obtener la carrera por su Id
+        var carrera = await _context.Carreras
+            .Include(c => c.PuntosDeControl)
+            .Include(c => c.Evento)
+            .Include(c => c.Participaciones)
+            .FirstOrDefaultAsync(c => c.Id == carreraId)
+            ?? throw new NotFoundException($"No se encontró la carrera con Id {carreraId}.");
+
+        // Buscar la participacion del participante dentro de la carrera
+        Participacion? participacion = carrera.Participaciones.FirstOrDefault(p => p.ParticipanteId == participanteId);
+
         if (participacion == null)
             throw new NotFoundException($"No se encontró la participación del usuario de Id {participanteId} en la carrera {carreraId}.");
 
         // Registrar progreso en el punto indicado (si ya existe, actualiza el tiempo)
         participacion.Progreso[puntoDeControlPosicion] = tiempo;
 
-        // Actualizar estado del participante según el progreso
-        // Obtener la cantidad total de puntos de control de la carrera (por evento)
-        var carrera = await _context.Carreras
-            .Include(c => c.PuntosDeControl)
-            .FirstOrDefaultAsync(c => c.EventoId == carreraId);
-
-        if (carrera != null)
+        // Actualizar estado del participante segun el progreso
+        var totalPuntos = carrera.PuntosDeControl.Count;
+        if (totalPuntos > 0)
         {
-            var totalPuntos = carrera.PuntosDeControl.Count;
-
-            if (totalPuntos > 0)
+            if (participacion.Estado == EstadoParticipanteEnCarrera.SinComenzar)
             {
-                // Si es la primera lectura y estaba SinComenzar, pasa a EnCurso
-                if (participacion.Estado == EstadoParticipanteEnCarrera.SinComenzar)
-                {
-                    participacion.Estado = EstadoParticipanteEnCarrera.EnCurso;
-                }
+                participacion.Estado = EstadoParticipanteEnCarrera.EnCurso;
+            }
 
-                // Si alcanzó el último punto, marcar como Completada
-                if (puntoDeControlPosicion >= totalPuntos)
+            // Si alcanzo el ultimo punto, marcar como Completada
+            if (puntoDeControlPosicion >= totalPuntos)
+            {
+                participacion.Estado = EstadoParticipanteEnCarrera.Completada;
+
+                // Asignar Puesto de llegada de forma segura (con bloqueo de fila de Carrera)
+                if (participacion.Puesto == 0)
                 {
-                    participacion.Estado = EstadoParticipanteEnCarrera.Completada;
+                    using var tx = await _context.Database.BeginTransactionAsync();
+                    // Bloquear la fila de la carrera para serializar la asignacion de puestos entre instancias
+                    await _context.Database.ExecuteSqlRawAsync("SELECT 1 FROM `Carreras` WHERE `Id` = {0} FOR UPDATE", carreraId);
+
+                    // Obtener el maximo puesto asignado en esta carrera y asignar el siguiente
+                    var maxPuesto = await _context.Participaciones
+                        .Where(p => EF.Property<Guid?>(p, "CarreraId") == carreraId && p.Puesto > 0)
+                        .MaxAsync(p => (uint?)p.Puesto) ?? 0;
+
+                    if (participacion.Puesto == 0) // doble chequeo dentro de la transaccion
+                    {
+                        participacion.Puesto = maxPuesto + 1;
+                    }
+
+                    await _context.SaveChangesAsync();
+                    await tx.CommitAsync();
                 }
             }
         }
@@ -115,7 +136,7 @@ public class ProgresoServices : IProgresoService
         await _context.SaveChangesAsync();
 
         // Recalcular estado del evento tras el cambio de estado del participante
-        await _carreraService.RecalcularEstadoEvento(carreraId);
+        await _carreraService.RecalcularEstadoEvento(carrera.EventoId);
     }
     
     public async Task AbandonarCarrera(Guid carreraId,  Guid participanteId)
@@ -137,6 +158,28 @@ public class ProgresoServices : IProgresoService
             throw new DomainRuleException("No se puede abandonar una carrera que ya ha finalizado o que no ha comenzado.");
 
         participacion.Estado = EstadoParticipanteEnCarrera.Abandonada;
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task DescalificarParticipante(Guid carreraId, Guid participanteId)
+    {
+        Carrera? carrera = await _context.Carreras
+            .Include(c => c.Evento)
+            .Include(c => c.Participaciones)
+            .FirstOrDefaultAsync(c => c.Id == carreraId);
+
+        if (carrera == null)
+            throw new NotFoundException($"No se encontró la carrera con Id {carreraId}.");
+
+        Participacion? participacion = carrera.Participaciones.FirstOrDefault(p => p.ParticipanteId == participanteId);
+        if (participacion == null)
+            throw new NotFoundException($"No se encontró la participación del usuario con Id {participanteId} en la carrera {carreraId}.");
+
+        if (carrera.Evento!.EstadoEvento == EstadoEvento.Finalizado 
+            || carrera.Evento!.EstadoEvento == EstadoEvento.SinComenzar)
+            throw new DomainRuleException("No se puede descalificar en una carrera que ya ha finalizado o que no ha comenzado.");
+
+        participacion.Estado = EstadoParticipanteEnCarrera.Descalificado;
         await _context.SaveChangesAsync();
     }
 }
