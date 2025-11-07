@@ -79,7 +79,7 @@ builder.Services.AddSweetAlert2(options => {
 var app = builder.Build();
 
 // Limpia las tablas y reinserta datos si es true
-var resetDbOnStart = false;
+var resetDbOnStart = true;
 if (resetDbOnStart)
 {
     InitData.ClearAllTables(app);
@@ -113,6 +113,7 @@ app.MapRazorComponents<App>()
 // Mapear endpoints de API
 app.MapGenerarLecturaProgresoEndpoints();
 app.MapControlGeneradorEndpoints();
+app.MapIngresoManualProgresoEndpoints();
 app.MapControllers();
 
 // Hub de verificación

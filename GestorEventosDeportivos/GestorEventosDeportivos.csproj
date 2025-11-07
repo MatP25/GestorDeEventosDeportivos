@@ -23,4 +23,11 @@
     <PackageReference Include="CurrieTechnologies.Razor.SweetAlert2" Version="5.6.0" />
   </ItemGroup>
 
+  <!-- Excluir los archivos del simulador del proyecto web para evitar compilarlos aqui -->
+  <ItemGroup>
+    <Compile Remove="Simulator/**" />
+    <None Remove="Simulator/**" />
+    <Content Remove="Simulator/**" />
+  </ItemGroup>
+
 </Project>
