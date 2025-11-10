@@ -101,7 +101,7 @@ dotnet run --project Simulator/RaceSimulator.csproj -- \
 	--seed 42
 ```
 - Correr una simulación (Con balanceador de carga):
-    - ```dotnet run --Project Simulator/RaceSimulator.csproj -- --hyyp-sim --carrera GUID --duration 60 --dropout 0.10 --dq 0.10 --seed 42 --lb-url http://localhost:8080```
+    - ```dotnet run --project Simulator/RaceSimulator.csproj -- --http-sim --carrera GUID --duration 60 --dropout 0.10 --dq 0.10 --seed 42 --lb-url http://localhost:8080```
 
     - En lineas diferentes
 ```sh
