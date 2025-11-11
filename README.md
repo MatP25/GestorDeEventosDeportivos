@@ -10,6 +10,14 @@ Aplicación web (ASP.NET Core 9 + Blazor Server) para gestionar carreras y parti
 
 ## Módulo de componentes
 
+- El usuario abre la app en el navegador (Blazor Server UI) y se conecta a NGINX.
+- NGINX balancea las solicitudes entre varias instancias de la app ASP.NET Core: app1, app2 y app3.
+- La UI de Blazor usa:
+	- HTTP/HTTPS para cargar páginas y llamar a Minimal APIs.
+	- WebSockets para la sesión interactiva de Blazor Server y para SignalR (tiempo real), todo pasando por NGINX.
+- Cada instancia (app1/2/3) ejecuta Blazor + Minimal APIs + SignalR y se conecta a la misma base de datos MySQL.
+- El simulador de carrera también llama por HTTP a NGINX, que lo distribuye a las instancias.
+
 [![](https://mermaid.ink/img/pako:eNqdk11vmzAUhv-Kda5ajdAYwkdRVQnSaYuURFlJ1Wn1LhxwCSrYyEC3Nsp_n8FtErqrzVd-j9_nnOMD3kEiUgYBPBbiV7KlskHzW8KRWnW7ySSttmha5Iw3TEe7Fd3NHghEBX0VEsVMPjOJ7mZXG3lxfcbpM8toKuQ5gZ8aYTwlXG_j2UKRcV62RedBKUMJlZJJqulE8FoUDNGq0rzG5pGill9my-_atqEF5Qk7lvmr47ZuVFNhvDKXn9doKuRJ-yFW2VQFrJO93eMTWuQ8L2mBwtWsVjLOM06L2-M9etbSrPU_rK1Z-x_Zk_ndRA9nBBYv8bc5gfPDxdUHQaMR-rpery7u2SYWyRNrahW6VqM7TP7dMojPo16GeCitobS1DLGSI9XFm7SG0h5KjK5GpqJVdwf_x4h9GgEDMpmnEDSyZQaUTJa0k7Dr3ASaLSsZgUBtUyqfCBC-V0xF-Q8hyndMijbbQvBIi1qptkppw25yqv6Mo0WNlMmpaHkDAXYndp8Egh38Vhp7Jracy4nleq41dnzfgBcILi1zPMY-dvyJ4_iO7e8NeO3Ljk3Pdz3sYtfuTrHrGcDSvBFyod9W_8T2fwCLiPkX?type=png)](https://mermaid.live/edit#pako:eNqdk11vmzAUhv-Kda5ajdAYwkdRVQnSaYuURFlJ1Wn1LhxwCSrYyEC3Nsp_n8FtErqrzVd-j9_nnOMD3kEiUgYBPBbiV7KlskHzW8KRWnW7ySSttmha5Iw3TEe7Fd3NHghEBX0VEsVMPjOJ7mZXG3lxfcbpM8toKuQ5gZ8aYTwlXG_j2UKRcV62RedBKUMJlZJJqulE8FoUDNGq0rzG5pGill9my-_atqEF5Qk7lvmr47ZuVFNhvDKXn9doKuRJ-yFW2VQFrJO93eMTWuQ8L2mBwtWsVjLOM06L2-M9etbSrPU_rK1Z-x_Zk_ndRA9nBBYv8bc5gfPDxdUHQaMR-rpery7u2SYWyRNrahW6VqM7TP7dMojPo16GeCitobS1DLGSI9XFm7SG0h5KjK5GpqJVdwf_x4h9GgEDMpmnEDSyZQaUTJa0k7Dr3ASaLSsZgUBtUyqfCBC-V0xF-Q8hyndMijbbQvBIi1qptkppw25yqv6Mo0WNlMmpaHkDAXYndp8Egh38Vhp7Jracy4nleq41dnzfgBcILi1zPMY-dvyJ4_iO7e8NeO3Ljk3Pdz3sYtfuTrHrGcDSvBFyod9W_8T2fwCLiPkX)
 
 ## Arquitectura general
