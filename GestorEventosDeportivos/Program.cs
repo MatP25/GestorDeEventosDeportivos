@@ -195,7 +195,6 @@ app.MapPost("/auth/login", async (HttpContext http, AppDbContext db) =>
         return Results.Redirect($"/login?error=Datos%20inv%C3%A1lidos");
     }
 
-    // NOTA: Password en texto plano solo para pruebas. Considerar hashing en producción.
     var usuario = await db.Usuarios.FirstOrDefaultAsync(u => u.Email == email && u.Password == password);
     if (usuario is null)
     {

@@ -151,7 +151,12 @@
                 <ul class="list-group">
                     @foreach (var p in Puntos)
                     {
-                        <li class="list-group-item">Posición @p.Posicion: @p.Ubicacion</li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>Posición @p.Posicion: @p.Ubicacion</span>
+                            <button class="btn btn-sm btn-outline-danger" title="Eliminar punto" @onclick="(() => OnEliminarPunto(p.Id))" disabled="@(!EventoEditable)">
+                                <i class="bi bi-trash"></i> Eliminar
+                            </button>
+                        </li>
                     }
                 </ul>
             </div>
@@ -279,6 +284,23 @@
             await CarreraService.AgregarPuntoAlaCarrera(CarreraSeleccionadaId.Value, PosicionPunto, UbicacionPunto);
             PosicionPunto = 1; UbicacionPunto = string.Empty;
             await RefrescarPuntosAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+
+    async Task OnEliminarPunto(long puntoId)
+    {
+        if (CarreraSeleccionadaId is null) return;
+        try
+        {
+            var ok = await CarreraService.EliminarPuntoDeControl(CarreraSeleccionadaId.Value, puntoId);
+            if (ok)
+            {
+                await RefrescarPuntosAsync();
+            }
         }
         catch (Exception ex)
         {

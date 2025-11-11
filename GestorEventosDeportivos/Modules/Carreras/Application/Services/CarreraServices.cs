@@ -389,6 +389,31 @@ public class CarreraService : ICarreraService
 		return pc;
 	}
 
+	public async Task<bool> EliminarPuntoDeControl(Guid carreraId, long puntoDeControlId)
+	{
+		// Traer carrera con evento para validar estado
+		var carrera = await _db.Carreras
+			.Include(c => c.Evento)
+			.Include(c => c.PuntosDeControl)
+			.FirstOrDefaultAsync(c => c.Id == carreraId);
+
+		if (carrera is null)
+			throw new NotFoundException("Carrera no encontrada");
+
+		if (carrera.Evento is null)
+			throw new DomainRuleException("Carrera sin evento asociado");
+
+		if (carrera.Evento.EstadoEvento != EstadoEvento.SinComenzar)
+			throw new DomainRuleException("Sólo se pueden eliminar puntos de control si la carrera no ha comenzado");
+
+		var punto = carrera.PuntosDeControl.FirstOrDefault(p => p.Id == puntoDeControlId);
+		if (punto is null)
+			throw new NotFoundException("Punto de control no encontrado para esta carrera");
+
+		_db.PuntosDeControl.Remove(punto);
+		return await _db.SaveChangesAsync().ContinueWith(t => t.Result > 0);
+	}
+
 	public async Task<Evento> RecalcularEstadoEvento(Guid eventoId)
 	{
 		var ev = await _db.Eventos.FirstOrDefaultAsync(e => e.Id == eventoId);
