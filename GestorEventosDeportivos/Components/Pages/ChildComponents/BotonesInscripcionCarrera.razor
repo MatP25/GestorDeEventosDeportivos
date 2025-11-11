@@ -35,13 +35,15 @@
                 Cargando...
             </button>
         } else {
-            if (!_registroHabilitado && !_usuarioEstaInscripto) { 
-                // Si no esta habilitado el registro y no esta inscripto no lo dejo inscribirse
+            // Registro abierto solo si está habilitado y el evento no ha comenzado
+            bool registroAbierto = _registroHabilitado && _estadoEvento == EstadoEvento.SinComenzar;
+            if (!registroAbierto && !_usuarioEstaInscripto) { 
+                // Si el registro no está abierto (deshabilitado o la carrera ya está en curso/finalizada)
                 <button class="btn btn-secondary" disabled>
                     Registro no habilitado
                 </button>
-            } else if (_registroHabilitado && !_usuarioEstaInscripto) {
-                // Si esta habilitado el registro y no esta inscripto lo dejo inscribirse
+            } else if (registroAbierto && !_usuarioEstaInscripto) {
+                // Si está habilitado y aún no comenzó, permitir inscripción
                  <button class="btn btn-primary" @onclick="InscribirUsuario">
                     Inscribirme
                 </button>
