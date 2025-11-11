@@ -4,6 +4,7 @@
 @using GestorEventosDeportivos.Modules.ProgresoCarreras.Domain.Entities
 @using GestorEventosDeportivos.Shared.Domain.Common
 @using System.Security.Claims
+@using Microsoft.VisualStudio.TestPlatform.TestExecutor
 
 @rendermode InteractiveServer
 
@@ -12,9 +13,10 @@
 @inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Detalles de la carrera</PageTitle>
-
+<div class="d-flex justify-content-between align-items-center mb-3">
 <h1>Detalles de la carrera</h1>
 
+</div>
 @if (cargando)
 {
     <p>Cargando carrera</p>
@@ -50,6 +52,8 @@ else
                 <tr>
                     <th>#</th>
                     <th>Participante</th>
+                    <th>Dorsal</th>
+                    <th>Observar</th>
                 </tr>
             </thead>
             <tbody>
@@ -59,6 +63,15 @@ else
                     <tr>
                         <td>@(_pagina > 1 ? ( _tamanoPagina * (_pagina - 1) + ++Counter ) : ++Counter )</td>
                         <td>@p.Participante?.Nombre @p.Participante?.Apellido</td>
+                        @{
+                            
+                            var dorsalNumero = dorsalesYEmails?
+                                .Where(d => d.Email == p.Participante?.Email.ToLowerInvariant())
+                                .Select(d => (uint?)d.NumeroCorredor)
+                                .FirstOrDefault();
+                        }
+                        <td>@(dorsalNumero.HasValue ? dorsalNumero.Value.ToString() : "-")</td>
+                        <td><button class="btn btn-success" @onclick="() => VerCarrera(id,p.Participante.Id)">Ver Carrera  <i class="bi bi-eye"></i></button></td>
                     </tr>
                 }
             </tbody>
@@ -92,6 +105,7 @@ else
     private int _totalPaginas = 1;
     private int _totalElementos = 0;
     private bool _registroHabilitado;
+    private IEnumerable<(uint NumeroCorredor, string Email)>? dorsalesYEmails;
 
     protected override async Task OnInitializedAsync()
     {
@@ -131,6 +145,8 @@ else
             Participaciones = page.Items.ToList();
             _totalElementos = page.TotalCount;
             _totalPaginas = page.TotalPages;
+            dorsalesYEmails = await CarreraService.ObtenerDorsalesYEmailsPorEvento(Carrera.Id);
+            
         }
         catch (Exception ex)
         {
@@ -166,6 +182,13 @@ else
         Nav.NavigateTo("/carreras");
     }
     
+    private void VerCarrera(Guid id, Guid participanteId)
+    {
+        if (Carrera is not null)
+        {
+            Nav.NavigateTo($"/carreras/{id}/ver/{participanteId}");
+        }
+    }
     private async void OnEventoDeInscripcion()
     {
         await CargarPagina();

@@ -1,0 +1,188 @@
+@page "/carreras/{carreraId:guid}/ver/{participanteId:guid}"
+@using GestorEventosDeportivos.Modules.Carreras.Application.Services
+@using Microsoft.AspNetCore.SignalR.Client
+@using GestorEventosDeportivos.Modules.Carreras.Domain.Entities
+@using GestorEventosDeportivos.Modules.ProgresoCarreras.Domain.Entities
+@using GestorEventosDeportivos.Modules.ProgresoCarreras.Application
+@inject ICarreraService CarreraService
+@inject IProgresoService ProgresoService
+@inject NavigationManager Nav
+
+<PageTitle>Ver participante en carrera</PageTitle>
+
+@if (cargando)
+{
+<p>Cargando...</p>
+}
+else if (!string.IsNullOrEmpty(error))
+{
+<div class="alert alert-danger">@error</div>
+}
+else if (Carrera is null || ParticipacionActual is null)
+{
+<div class="alert alert-warning">Carrera o participante no encontrados.</div>
+}
+else
+{
+<div class="mb-3">
+<h3 class="mb-0">@Carrera.Evento?.Nombre</h3>
+<small class="text-muted">@Carrera.Evento?.FechaInicio.ToString("g")</small>
+</div>
+<div class="race-track-container mb-4">
+    <div class="race-track-line">
+        @for (int i = 0; i < OrderedPoints.Count; i++)
+        {
+            var pc = OrderedPoints[i];
+            var left = GetPercentForIndex(i);
+            <div class="track-point" style="left:@($"{left}%")">
+                <div class="point-marker"></div>
+                <div class="point-label">PC @pc.Posicion</div>
+            </div>
+        }
+
+        
+        @{
+            var currentIndex = GetParticipantCurrentPointIndex(ParticipacionActual);
+            var leftPos = GetPercentForIndex(Math.Max(0, currentIndex));
+        }
+        <div class="participant-badge" style="left:@($"{leftPos}%"); top:@("-48px")">
+            <span class="badge bg-primary">@ParticipacionActual.Participante?.Nombre @ParticipacionActual.Participante?.Apellido</span>
+            <div class="badge-small">@((ParticipacionActual.NumeroCorredor > 0) ? ParticipacionActual.NumeroCorredor.ToString() : "-")</div>
+        </div>
+    </div>
+</div>
+
+<h5 class="mt-3">Detalle participante</h5>
+<div class="table-responsive">
+    <table class="table table-sm table-bordered align-middle">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Dorsal</th>
+                <th>Email</th>
+                <th>Último PC</th>
+                <th>Progreso</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>@ParticipacionActual.Participante?.Nombre @ParticipacionActual.Participante?.Apellido</td>
+                <td>@(ParticipacionActual.NumeroCorredor > 0 ? ParticipacionActual.NumeroCorredor.ToString() : "-")</td>
+                <td>@ParticipacionActual.Participante?.Email</td>
+                @{
+                    var lastIdx = GetParticipantCurrentPointIndex(ParticipacionActual);
+                    var lastPcLabel = lastIdx >= 0 && lastIdx < OrderedPoints.Count ? $"PC {OrderedPoints[lastIdx].Posicion}" : "Sin comenzar";
+                }
+                <td>@lastPcLabel</td>
+                @{
+                    var progreso = ParticipacionActual.Progreso.Last();
+                }
+                <td>@progreso.Key @progreso.Value</td>
+                <td>@ParticipacionActual.Estado</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+}
+
+@code {
+[Parameter] public Guid carreraId { get; set; }
+[Parameter] public Guid participanteId { get; set; }
+private Carrera? Carrera;
+private Participacion? ParticipacionActual;
+private HubConnection? hubConnection;
+private bool cargando = true;
+private string? error;
+
+
+private List<PuntoDeControl> OrderedPoints = new();
+
+protected override async Task OnInitializedAsync()
+{
+    try
+    {
+        // cargar carrera y puntos
+        Carrera = await CarreraService.ObtenerCarreraConDetalle(carreraId);
+        OrderedPoints = Carrera?.PuntosDeControl?.OrderBy(p => p.Posicion).ToList() ?? new();
+
+        // cargar progreso del participante 
+        try
+        {
+            var lista = await ProgresoService.ListarParticipacionesConProgresoDeCarrera(carreraId);
+            ParticipacionActual = lista?.FirstOrDefault(p => p.ParticipanteId == participanteId);
+        }
+        catch
+        {
+            ParticipacionActual = null;
+            
+        }
+
+        
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Nav.ToAbsoluteUri("/raceHub"))
+            .WithAutomaticReconnect()
+            .Build();
+
+       
+        hubConnection.On<Guid, uint>("ProgresoActualizado", (pId, posicion) =>
+        {
+            if (pId != participanteId) return;
+
+            if (ParticipacionActual != null)
+            {
+                if (ParticipacionActual.Progreso == null) ParticipacionActual.Progreso = new Dictionary<uint, TimeSpan>();
+                if (!ParticipacionActual.Progreso.ContainsKey(posicion))
+                    ParticipacionActual.Progreso[posicion] = TimeSpan.Zero;
+
+                InvokeAsync(StateHasChanged);
+            }
+        });
+
+        await hubConnection.StartAsync();
+        await hubConnection.SendAsync("JoinRace", carreraId.ToString());
+    }
+    catch (Exception ex)
+    {
+        error = ex.Message;
+    }
+    finally
+    {
+        cargando = false;
+    }
+}
+
+private int GetParticipantCurrentPointIndex(Participacion? p)
+{
+    if (p == null || OrderedPoints == null || OrderedPoints.Count == 0) return -1;
+    var passed = p.Progreso?.Keys ?? Enumerable.Empty<uint>();
+    var indices = OrderedPoints
+        .Select((pc, i) => new { pc.Posicion, i })
+        .Where(x => passed.Contains(x.Posicion))
+        .Select(x => x.i);
+
+    return indices.Any() ? indices.Max() : -1;
+}
+
+private double GetPercentForIndex(int index)
+{
+    if (OrderedPoints.Count <= 1) return 0;
+    var max = OrderedPoints.Count - 1;
+    index = Math.Clamp(index, 0, max);
+    return (index * 100.0) / max;
+}
+
+public async ValueTask DisposeAsync()
+{
+    if (hubConnection != null)
+    {
+        try
+        {
+            await hubConnection.SendAsync("LeaveRace", carreraId.ToString());
+            await hubConnection.StopAsync();
+            await hubConnection.DisposeAsync();
+        }
+        catch { }
+    }
+}
+}

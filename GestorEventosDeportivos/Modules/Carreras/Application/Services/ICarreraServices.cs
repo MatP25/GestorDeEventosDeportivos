@@ -25,4 +25,5 @@ public interface ICarreraService{
     Task<PuntoDeControl> AgregarPuntoAlaCarrera(Guid carreraId, uint posicion, string ubicacion);
     Task<Evento> RecalcularEstadoEvento(Guid eventoId);
     Task<IEnumerable<Participacion>> ListarParticipacionesDeUsuario(Guid usuarioId);
+    Task<IEnumerable<(uint NumeroCorredor, string Email)>> ObtenerDorsalesYEmailsPorEvento(Guid carreraId);
 }

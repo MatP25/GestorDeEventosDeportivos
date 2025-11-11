@@ -103,6 +103,7 @@ app.MapControlGeneradorEndpoints();
 
 // Hub de verificación
 app.MapHub<VerificationHub>("/hubs/verification");
+app.MapHub<RaceHub>("/raceHub");
 
 // Endpoint de verificación vía token
 app.MapGet("/verify", async ([FromQuery] Guid token, HttpContext http, VerificationUserService userSvc, IHubContext<VerificationHub> hub) =>

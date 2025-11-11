@@ -362,4 +362,28 @@ public class CarreraService : ICarreraService
 			.OrderByDescending(p => p.Evento != null ? p.Evento.FechaInicio : DateTime.MinValue)
 			.ToListAsync();
 	}
+
+
+	public async Task<IEnumerable<(uint NumeroCorredor, string Email)>> ObtenerDorsalesYEmailsPorEvento(Guid carreraId)
+	{
+
+		var carrera = await _db.Carreras.AsNoTracking().FirstOrDefaultAsync(c => c.Id == carreraId);
+		if (carrera is null) return Enumerable.Empty<(uint, string)>();
+		var datos = await _db.Participaciones
+		.Include(p => p.Participante)
+		.Where(p => p.EventoId == carrera.EventoId) // <-- usar EventoId, no Carrera.Id
+		.AsNoTracking()
+		.Select(p => new
+		{
+			NumeroCorredor = p.NumeroCorredor,
+			Email = p.Participante != null ? (p.Participante.Email ?? string.Empty).ToLowerInvariant() : string.Empty
+		})
+		.OrderBy(d => d.NumeroCorredor)
+		.ToListAsync();
+
+		return datos.Select(d => (d.NumeroCorredor, d.Email));
+	}
+	
+	
+
 }
