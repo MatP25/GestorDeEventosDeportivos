@@ -22,7 +22,7 @@ Aplicación web (ASP.NET Core 9 + Blazor Server) para gestionar carreras y parti
 
 ## Arquitectura general
 
-El sistema es un monolito modular: todo corre en una misma aplicacion, separada por módulos.
+El sistema es un monolito.
 
 - **Módulo Carreras**: Administra carreras y sus puntos de control (Creacion, estado general).
 - **Módulo Progreso de Carreras**: Registra lecturas de corredores, calcula puestos y estados (Finaliza, Abanadona, Descalificado).
