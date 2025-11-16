@@ -5,6 +5,8 @@ using GestorEventosDeportivos.Modules.ProgresoCarreras.Datatypes;
 using GestorEventosDeportivos.Modules.ProgresoCarreras.Domain.Entities;
 using GestorEventosDeportivos.Shared.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.SignalR;
+using GestorEventosDeportivos.Hubs;
 
 namespace GestorEventosDeportivos.Modules.ProgresoCarreras.Application;
 
@@ -12,11 +14,13 @@ public class ProgresoServices : IProgresoService
 {
     private readonly AppDbContext _context;
     private readonly ICarreraService _carreraService;
+    private readonly IHubContext<RaceUpdatesHub> _raceHub;
 
-    public ProgresoServices(AppDbContext context, ICarreraService carreraService)
+    public ProgresoServices(AppDbContext context, ICarreraService carreraService, IHubContext<RaceUpdatesHub> raceHub)
     {
         _context = context;
         _carreraService = carreraService;
+        _raceHub = raceHub;
     }
 
     public async Task<Participacion> VerProgresoDeParticipanteEnCarrera(Guid eventoId, Guid participanteId)
@@ -133,10 +137,13 @@ public class ProgresoServices : IProgresoService
             }
         }
 
-        await _context.SaveChangesAsync();
+    await _context.SaveChangesAsync();
 
-        // Recalcular estado del evento tras el cambio de estado del participante
-        await _carreraService.RecalcularEstadoEvento(carrera.EventoId);
+    // Recalcular estado del evento tras el cambio de estado del participante
+    await _carreraService.RecalcularEstadoEvento(carrera.EventoId);
+
+    // Notificar a clientes suscritos a esta carrera
+    await _raceHub.Clients.Group(carrera.Id.ToString()).SendAsync("RaceUpdated", carrera.Id);
     }
     
     public async Task AbandonarCarrera(Guid carreraId,  Guid participanteId)
@@ -158,7 +165,8 @@ public class ProgresoServices : IProgresoService
             throw new DomainRuleException("No se puede abandonar una carrera que ya ha finalizado o que no ha comenzado.");
 
         participacion.Estado = EstadoParticipanteEnCarrera.Abandonada;
-        await _context.SaveChangesAsync();
+    await _context.SaveChangesAsync();
+    await _raceHub.Clients.Group(carrera.Id.ToString()).SendAsync("RaceUpdated", carrera.Id);
     }
 
     public async Task DescalificarParticipante(Guid carreraId, Guid participanteId)
@@ -180,6 +188,7 @@ public class ProgresoServices : IProgresoService
             throw new DomainRuleException("No se puede descalificar en una carrera que ya ha finalizado o que no ha comenzado.");
 
         participacion.Estado = EstadoParticipanteEnCarrera.Descalificado;
-        await _context.SaveChangesAsync();
+    await _context.SaveChangesAsync();
+    await _raceHub.Clients.Group(carrera.Id.ToString()).SendAsync("RaceUpdated", carrera.Id);
     }
 }

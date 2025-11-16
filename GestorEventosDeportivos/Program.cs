@@ -60,6 +60,9 @@ if (generadorHabilitado)
     builder.Services.AddHostedService<GeneradorAutomaticoLecturas>();
 }
 
+// Watcher de carrera (emite cambios a clientes conectados por instancia)
+builder.Services.AddHostedService<RaceWatcherService>();
+
 // SignalR
 builder.Services.AddSignalR();
 
@@ -118,6 +121,8 @@ app.MapControllers();
 
 // Hub de verificación
 app.MapHub<VerificationHub>("/hubs/verification");
+// Hub de actualizaciones de carrera
+app.MapHub<RaceUpdatesHub>("/hubs/race");
 
 // Endpoint de verificación vía token
 app.MapGet("/verify", async ([FromQuery] Guid token, HttpContext http, VerificationUserService userSvc, IHubContext<VerificationHub> hub) =>

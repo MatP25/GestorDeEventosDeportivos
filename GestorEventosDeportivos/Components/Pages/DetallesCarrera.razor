@@ -5,6 +5,7 @@
 @using GestorEventosDeportivos.Modules.ProgresoCarreras.Domain.Entities
 @using GestorEventosDeportivos.Shared.Domain.Common
 @using System.Security.Claims
+@using Microsoft.AspNetCore.WebUtilities
 
 @rendermode InteractiveServer
 
@@ -14,7 +15,18 @@
 
 <PageTitle>Detalles de la carrera</PageTitle>
 
-<h1>Detalles de la carrera</h1>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">Detalles de la carrera</h1>
+    @if (Carrera?.Evento?.EstadoEvento == EstadoEvento.EnCurso)
+    {
+        <button class="btn btn-success" @onclick="ToggleVerCarrera">Ver carrera</button>
+    }
+    else
+    {
+        <span></span>
+    }
+    
+</div>
 
 <div class="mb-5">
 
@@ -35,6 +47,11 @@
         <GestorEventosDeportivos.Components.Pages.ChildComponents.EncabezadoDetallesCarrera 
             Carrera="@Carrera"
         />
+
+        @if (_mostrarEnCurso && Carrera is not null && Carrera.Evento?.EstadoEvento == EstadoEvento.EnCurso)
+        {
+            <GestorEventosDeportivos.Components.Pages.ChildComponents.CarreraEnCursoPanel CarreraId="@Carrera.Id" />
+        }
 
         <h4 class="mt-4">Participantes inscriptos confirmados: (@Carrera?.CantidadParticipacionesPagas)</h4>
         @if (_registroHabilitado) {
@@ -150,11 +167,26 @@
     private string _inputBusqueda = string.Empty;
     private bool _filtroActivo = false;
     private string? _mensajeFiltro;
+    private bool _mostrarEnCurso = false;
 
     protected override async Task OnInitializedAsync()
     {
         await ObtenerAutenticacion();
         await ObtenerDetallesDeCarrera();
+        try
+        {
+            var uri = Nav.ToAbsoluteUri(Nav.Uri);
+            var q = QueryHelpers.ParseQuery(uri.Query);
+            if (q.TryGetValue("live", out var liveVal))
+            {
+                var v = liveVal.ToString();
+                if (string.Equals(v, "1", StringComparison.OrdinalIgnoreCase) || string.Equals(v, "true", StringComparison.OrdinalIgnoreCase))
+                {
+                    _mostrarEnCurso = true;
+                }
+            }
+        }
+        catch { }
     }
 
     private async Task ObtenerDetallesDeCarrera() {
@@ -287,4 +319,6 @@
         _pagina = 1;
         await CargarPagina();
     }
+
+    private void ToggleVerCarrera() => _mostrarEnCurso = !_mostrarEnCurso;
 }
