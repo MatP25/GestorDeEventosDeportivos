@@ -124,6 +124,41 @@
 	}
 </section>
 
+<!-- Carreras en curso -->
+<section class="container my-5">
+	<div class="d-flex justify-content-between align-items-center mb-3">
+		<h2 class="h4 m-0">Carreras en curso</h2>
+	</div>
+	@if (EnCurso.Count == 0)
+	{
+		<p class="text-muted">No hay carreras en curso en este momento.</p>
+	}
+	else
+	{
+		<div class="row row-cols-1 row-cols-md-3 g-3">
+			@foreach (var c in EnCurso)
+			{
+				<div class="col">
+					<div class="card h-100 shadow-sm border-success">
+						<div class="card-body d-flex flex-column">
+							<div class="d-flex justify-content-between align-items-start mb-2">
+								<h5 class="card-title mb-0">@c.Evento!.Nombre</h5>
+								<span class="badge text-bg-success">En curso</span>
+							</div>
+							<p class="card-text text-secondary mb-1">@c.Evento!.Ubicacion</p>
+							<p class="card-text text-secondary mb-2">@c.Evento!.FechaInicio</p>
+							<div class="mt-auto d-flex gap-2 justify-content-end">
+								<a class="btn btn-outline-secondary" href="/carreras/@c.Id/detalles">Ver detalles</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			}
+		</div>
+	}
+    
+</section>
+
 <!-- Novedades deportivas -->
 <section class="container my-5">
 	<div class="d-flex justify-content-between align-items-center mb-3">
@@ -169,6 +204,7 @@
 	protected List<Carrera> ProximosEventos { get; set; } = new();
 	protected List<Carrera> PocosCupos { get; set; } = new();
 	protected List<Carrera> Populares { get; set; } = new();
+    protected List<Carrera> EnCurso { get; set; } = new();
 
 	protected List<(string Titulo, string Resumen, string Slug)> Novedades { get; set; } = new()
 	{
@@ -201,6 +237,13 @@
 			.Where(c => c.Evento!.EstadoEvento == EstadoEvento.SinComenzar || c.Evento!.EstadoEvento == EstadoEvento.EnCurso)
 			.OrderByDescending(c => c.CantidadParticipacionesPagas)
 			.ThenBy(c => c.Evento!.FechaInicio)
+			.Take(6)
+			.ToList();
+
+		// En curso: estado EnCurso, top 6
+		EnCurso = _todas
+			.Where(c => c.Evento!.EstadoEvento == EstadoEvento.EnCurso)
+			.OrderByDescending(c => c.Evento!.FechaInicio)
 			.Take(6)
 			.ToList();
 	}

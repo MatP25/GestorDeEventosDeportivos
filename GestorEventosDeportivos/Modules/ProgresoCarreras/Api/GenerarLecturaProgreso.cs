@@ -3,6 +3,7 @@ using GestorEventosDeportivos.Modules.ProgresoCarreras.Domain.Entities;
 using GestorEventosDeportivos.Shared.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.SignalR;
 
 namespace GestorEventosDeportivos.Modules.ProgresoCarreras.Api;
 
@@ -15,7 +16,8 @@ public static class GenerarLecturaProgreso
     }
 
     private static async Task<IResult> GenerarLectura(
-        [FromServices] AppDbContext context)
+        [FromServices] AppDbContext context,
+        [FromServices] Microsoft.AspNetCore.SignalR.IHubContext<GestorEventosDeportivos.Hubs.RaceUpdatesHub> raceHub)
     {
         try
         {
@@ -89,6 +91,9 @@ public static class GenerarLecturaProgreso
             }
 
             await context.SaveChangesAsync();
+
+            // Notificar a los clientes del grupo de la carrera
+            await raceHub.Clients.Group(carrera.Id.ToString()).SendAsync("RaceUpdated", carrera.Id);
 
             return Results.Ok(new
             {

@@ -146,6 +146,11 @@
                     </div>
                 </div>
 
+                @if (!string.IsNullOrWhiteSpace(_mensajePuntosError))
+                {
+                    <div class="alert alert-danger mt-2">@_mensajePuntosError</div>
+                }
+
                 <hr />
                 <h6>Puntos de Control</h6>
                 <ul class="list-group">
@@ -213,6 +218,7 @@
 
     private uint PosicionPunto { get; set; } = 1;
     private string UbicacionPunto { get; set; } = string.Empty;
+    private string? _mensajePuntosError;
 
     protected override async Task OnInitializedAsync()
     {
@@ -281,13 +287,20 @@
         if (CarreraSeleccionadaId is null || PosicionPunto < 1 || string.IsNullOrWhiteSpace(UbicacionPunto)) return;
         try
         {
+            if (Puntos.Any(p => p.Posicion == PosicionPunto))
+            {
+                _mensajePuntosError = $"Ya existe un punto de control en la posición {PosicionPunto}.";
+                return;
+            }
             await CarreraService.AgregarPuntoAlaCarrera(CarreraSeleccionadaId.Value, PosicionPunto, UbicacionPunto);
             PosicionPunto = 1; UbicacionPunto = string.Empty;
+            _mensajePuntosError = null;
             await RefrescarPuntosAsync();
         }
         catch (Exception ex)
         {
             Console.WriteLine(ex.Message);
+            _mensajePuntosError = "Ocurrió un error al agregar el punto.";
         }
     }
 
