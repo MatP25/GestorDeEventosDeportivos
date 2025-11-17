@@ -131,7 +131,7 @@
             }
 
             <h5 class="mt-4">Mis resultados</h5>
-            @if (ParticipacionesUsuario.Any(x => x.Estado != EstadoParticipanteEnCarrera.SinComenzar))
+            @if (ParticipacionesUsuario.Any(x => x.Evento?.EstadoEvento == EstadoEvento.Finalizado))
             {
                 <div class="table-responsive">
                     <table class="table table-sm align-middle">
@@ -146,7 +146,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var p in ParticipacionesUsuario.Where(x => x.Estado != EstadoParticipanteEnCarrera.SinComenzar))
+                            @foreach (var p in ParticipacionesUsuario.Where(x => x.Evento?.EstadoEvento == EstadoEvento.Finalizado))
                             {
                                 <tr>
                                     <td>@p.Evento?.Nombre</td>
