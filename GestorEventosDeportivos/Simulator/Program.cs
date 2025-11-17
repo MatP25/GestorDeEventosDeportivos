@@ -215,10 +215,29 @@ var config = new ConfigurationBuilder()
                 return (resp.IsSuccessStatusCode, up);
             }
 
-            Console.WriteLine($"{Ts()} HTTP SIM Race {carreraHttp.Id} started. Checkpoints={checkpointsHttp}. Runners={corredoresHttp.Count}.");
+            Console.WriteLine($"{Ts()} HTTP SIM Race {carreraHttp.Id} starting… Checkpoints={checkpointsHttp}. Runners={corredoresHttp.Count}.");
+
+            var upstreamCountsSim = new ConcurrentDictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+            // Marca de salida: poner a todos EnCurso con CP0 = 0ms (para que el panel muestre 00:00)
+            var startTasks = corredoresHttp.Select(corredor => Task.Run(async () =>
+            {
+                var dorsal = corredor.NumeroCorredor ?? 0;
+                var res = await PostJsonAsync("/api/progreso/registrar", new
+                {
+                    carreraId = carreraHttp.Id,
+                    participanteId = corredor.ParticipanteId,
+                    puntoDeControlPosicion = 0,
+                    elapsedMs = 0L
+                });
+                upstreamCountsSim.AddOrUpdate(res.upstream, 1, (_, v) => v + 1);
+                Console.WriteLine($"{Ts()} Runner {dorsal} START via {res.upstream} => {(res.ok ? "OK" : "FAIL")}");
+            })).ToArray();
+
+            await Task.WhenAll(startTasks);
+            Console.WriteLine($"{Ts()} HTTP SIM Race {carreraHttp.Id} started.");
 
             int finishedCount = 0, abandonedCount = 0, dqCount = 0;
-            var upstreamCountsSim = new ConcurrentDictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
             var tasksHttp = corredoresHttp.Select(corredor => Task.Run(async () =>
             {
@@ -403,7 +422,7 @@ var corredores = participaciones
         }
     }
 
-    Console.WriteLine($"{Ts()} Race {carrera.Id} started. Duration {durationSec}s. Checkpoints={checkpoints}. Runners={corredores.Count}.");
+    Console.WriteLine($"{Ts()} Race {carrera.Id} starting… Duration {durationSec}s. Checkpoints={checkpoints}. Runners={corredores.Count}.");
 
 // Poner todos los corredores EnCurso al inicio y marcar evento EnCurso
         await retryPolicy.ExecuteAsync(async () =>
@@ -416,10 +435,16 @@ var corredores = participaciones
             foreach (var p in parts)
             {
                 if (p.Estado == EstadoParticipanteEnCarrera.SinComenzar)
+                {
                     p.Estado = EstadoParticipanteEnCarrera.EnCurso;
+                    if (!p.Progreso.ContainsKey(0u))
+                        p.Progreso[0u] = TimeSpan.Zero; // CP0 = 00:00 en la salida
+                }
             }
             await db.SaveChangesAsync();
         });
+
+    Console.WriteLine($"{Ts()} Race {carrera.Id} started.");
 
 // Generadores de tiempo: asignar factor de velocidad por corredor y segmentación para que el total ~ durationSec
         // Distribucion normal con Random provisto (evita Random compartido entre tareas)
