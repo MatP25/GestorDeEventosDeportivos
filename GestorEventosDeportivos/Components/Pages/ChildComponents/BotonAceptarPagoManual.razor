@@ -51,7 +51,18 @@
             if (!resultado) {
                 AlertActualizacionFallida(mensaje: "Ocurrió un error inesperado, intente de nuevo más tarde");
             } else {
-                AlertActualizacionExitosa("Se ha confirmado el pago del participante");
+                // Asigna numero al corredor
+                try {
+                    var numero = await CarreraService.AsignarNumeroTrasPago(IdCarrera, IdParticipante);
+                    AlertActualizacionExitosa($"Pago confirmado. Número asignado: {numero}");
+                } catch (DomainRuleException ex) {
+                    // Pago confirmado pero no se pudo asignar número (capacidad, estado, etc.)
+                    AlertActualizacionFallida($"Pago confirmado pero sin número asignado: {ex.Message}");
+                } catch (NotFoundException ex) {
+                    AlertActualizacionFallida($"Pago confirmado pero no se pudo asignar número: {ex.Message}");
+                } catch (Exception) {
+                    AlertActualizacionFallida("Pago confirmado pero ocurrió un error asignando el número.");
+                }
             }
         } catch (NotFoundException ex) {
             AlertActualizacionFallida(ex.Message); 
