@@ -226,7 +226,7 @@ public class InitData
                         new PuntoDeControl { Posicion = 3, Ubicacion = "Km 15" },
                         new PuntoDeControl { Posicion = 4, Ubicacion = "Km 21" }
                     },
-                    CantidadParticipacionesPagas = 25
+                    CantidadParticipacionesPagas = 22
                 });
 
                 var carrera7 = context.Carreras.Add(new()
